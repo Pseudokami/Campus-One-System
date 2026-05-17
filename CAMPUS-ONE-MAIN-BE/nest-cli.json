@@ -1,0 +1,20 @@
+{
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "src",
+  "monorepo": true,
+  "root": "src",
+  "projects": {
+    "main":                { "type": "application", "root": "src",                        "entryFile": "main", "sourceRoot": "src" },
+    "auth-service":        { "type": "application", "root": "apps/auth-service",          "entryFile": "main", "sourceRoot": "apps/auth-service/src" },
+    "institution-service": { "type": "application", "root": "apps/institution-service",   "entryFile": "main", "sourceRoot": "apps/institution-service/src" },
+    "alumni":              { "type": "application", "root": "apps/alumni",                "entryFile": "main", "sourceRoot": "apps/alumni/src" },
+    "application":         { "type": "application", "root": "apps/application",           "entryFile": "main", "sourceRoot": "apps/application/src" },
+    "enrollment":          { "type": "application", "root": "apps/enrollment",            "entryFile": "main", "sourceRoot": "apps/enrollment/src" },
+    "student":             { "type": "application", "root": "apps/student",               "entryFile": "main", "sourceRoot": "apps/student/src" },
+    "profile-service":     { "type": "application", "root": "apps/profile-service",       "entryFile": "main", "sourceRoot": "apps/profile-service/src" },
+    "dashboard-service":   { "type": "application", "root": "apps/dashboard-service",     "entryFile": "main", "sourceRoot": "apps/dashboard-service/src" },
+    "grades-service":      { "type": "application", "root": "apps/grades-service",        "entryFile": "main", "sourceRoot": "apps/grades-service/src" },
+    "subjects-service":    { "type": "application", "root": "apps/subjects-service",      "entryFile": "main", "sourceRoot": "apps/subjects-service/src" },
+    "courses-service":     { "type": "application", "root": "apps/courses-service",       "entryFile": "main", "sourceRoot": "apps/courses-service/src" }
+  }
+}
