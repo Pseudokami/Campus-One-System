@@ -837,3 +837,39 @@ CREATE POLICY grades_select_own ON public.grades
 DROP POLICY IF EXISTS notifications_select_own ON public.notifications;
 CREATE POLICY notifications_select_own ON public.notifications
   FOR SELECT USING (user_id = auth.uid());
+
+-- =============================================================================
+-- SECTION 13: INSTITUTION RESOURCES
+-- Generic JSONB store for institution dashboard data
+-- (classes, subjects, students, employees, accounts, fees, salary, attendance)
+-- All writes go through the institution-data-service (service role key)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS public.institution_resources (
+  id             TEXT        PRIMARY KEY,
+  institution_id UUID        NOT NULL,
+  resource_type  TEXT        NOT NULL,
+  data           JSONB       NOT NULL DEFAULT '{}',
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT institution_resources_type_check CHECK (
+    resource_type IN ('classes','subjects','students','employees','accounts','fees','salary','attendance')
+  )
+);
+
+CREATE INDEX IF NOT EXISTS institution_resources_institution_idx
+  ON public.institution_resources (institution_id, resource_type);
+
+CREATE OR REPLACE FUNCTION public.institution_resources_set_updated_at()
+RETURNS TRIGGER LANGUAGE plpgsql AS
+$$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS institution_resources_set_updated_at ON public.institution_resources;
+CREATE TRIGGER institution_resources_set_updated_at
+  BEFORE UPDATE ON public.institution_resources
+  FOR EACH ROW EXECUTE PROCEDURE public.institution_resources_set_updated_at();

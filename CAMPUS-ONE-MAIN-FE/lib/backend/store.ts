@@ -1,148 +1,104 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { seedDb } from "@/lib/backend/seed";
-import type { ActionLog, BackendRecord, CampusDb, ResourceName, SchoolProfile, User } from "@/lib/backend/types";
-import { resourceNames } from "@/lib/backend/types";
+import { cookies } from 'next/headers';
+import type { ResourceName, SchoolProfile } from './types';
 
-const dbPath = path.join(process.cwd(), "data", "campus-one-db.json");
+const DATA_SERVICE = process.env.DATA_SERVICE_URL ?? 'http://localhost:4001';
 
-const blankSchool = (userId: string): SchoolProfile => ({
-  id: `school-${userId}`,
-  name: "",
-  representative: "",
-  email: "",
-  contactNumber: "",
-  schoolType: "",
-  targetSubdomain: "",
-  status: "draft",
-  setupProgress: 0,
-});
+async function getUserId(): Promise<string> {
+  const cookieStore = await cookies();
+  return cookieStore.get('user_id')?.value ?? '';
+}
 
-async function ensureDb() {
-  try {
-    await readFile(dbPath, "utf8");
-  } catch {
-    await mkdir(path.dirname(dbPath), { recursive: true });
-    await writeFile(dbPath, JSON.stringify(seedDb, null, 2));
+async function apiFetch(path: string, options: RequestInit = {}) {
+  const userId = await getUserId();
+  const res = await fetch(`${DATA_SERVICE}/api${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'x-user-id': userId,
+      ...(options.headers ?? {}),
+    },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: 'Request failed' }));
+    throw new Error(err.message ?? 'Request failed');
   }
+  return res.json();
 }
 
-export async function readDb(): Promise<CampusDb> {
-  await ensureDb();
-  const content = await readFile(dbPath, "utf8");
-  const db = JSON.parse(content) as CampusDb;
-  if (!db.users) db.users = [];
-  if (!db.schools) db.schools = {};
-  return db;
-}
+// ─── Resource helpers ─────────────────────────────────────────────────────────
 
-export async function writeDb(db: CampusDb) {
-  await mkdir(path.dirname(dbPath), { recursive: true });
-  await writeFile(dbPath, JSON.stringify(db, null, 2));
-}
+export const resourceNames: ResourceName[] = [
+  'classes', 'subjects', 'students', 'employees',
+  'accounts', 'fees', 'salary', 'attendance',
+];
 
 export function isResourceName(value: string): value is ResourceName {
   return resourceNames.includes(value as ResourceName);
 }
 
-export async function getSchoolForUser(userId: string): Promise<SchoolProfile> {
-  const db = await readDb();
-  return db.schools[userId] ?? blankSchool(userId);
-}
-
-export async function updateSchoolForUser(userId: string, payload: Partial<SchoolProfile>): Promise<SchoolProfile> {
-  const db = await readDb();
-  const existing = db.schools[userId] ?? blankSchool(userId);
-  db.schools[userId] = { ...existing, ...payload, id: existing.id };
-  await writeDb(db);
-  return db.schools[userId];
-}
-
 export async function listResource(resource: ResourceName, search?: string) {
-  const db = await readDb();
-  const rows = db[resource];
-  const normalizedSearch = search?.trim().toLowerCase();
-
-  if (!normalizedSearch) {
-    return rows;
-  }
-
-  return rows.filter((row) =>
-    Object.values(row).some((value) => value.toLowerCase().includes(normalizedSearch)),
-  );
+  const qs = search ? `?search=${encodeURIComponent(search)}` : '';
+  return apiFetch(`/resources/${resource}${qs}`);
 }
 
-export async function createResource(resource: ResourceName, payload: BackendRecord) {
-  const db = await readDb();
-  const record = {
-    id: payload.id || `${resource}-${Date.now()}`,
-    ...payload,
-  };
-
-  db[resource] = [record, ...db[resource]];
-  await writeDb(db);
-
-  return record;
+export async function createResource(resource: ResourceName, payload: Record<string, string>) {
+  return apiFetch(`/resources/${resource}`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 }
 
-export async function updateResource(resource: ResourceName, id: string, payload: BackendRecord) {
-  const db = await readDb();
-  const index = db[resource].findIndex((row) => row.id === id);
-
-  if (index === -1) {
-    return null;
-  }
-
-  const updated = { ...db[resource][index], ...payload, id };
-  db[resource][index] = updated;
-  await writeDb(db);
-
-  return updated;
+export async function updateResource(resource: ResourceName, id: string, payload: Record<string, string>) {
+  return apiFetch(`/resources/${resource}/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function deleteResource(resource: ResourceName, id: string) {
-  const db = await readDb();
-  const currentCount = db[resource].length;
-  db[resource] = db[resource].filter((row) => row.id !== id);
-
-  if (db[resource].length === currentCount) {
-    return false;
-  }
-
-  await writeDb(db);
-  return true;
+  return apiFetch(`/resources/${resource}/${id}`, { method: 'DELETE' });
 }
 
-export async function logAction(module: string, label: string) {
-  const db = await readDb();
-  const action: ActionLog = {
-    id: `action-${Date.now()}`,
-    label,
-    module,
-    createdAt: new Date().toISOString(),
+// ─── Dashboard ────────────────────────────────────────────────────────────────
+
+export async function dashboardSummary() {
+  return apiFetch('/dashboard');
+}
+
+export async function readDb() {
+  const summary = await apiFetch('/dashboard').catch(() => ({
+    totalStudents: 0, totalEmployees: 0, revenue: 0, profit: 0,
+  }));
+  return {
+    students:   Array(summary.totalStudents).fill({}),
+    employees:  Array(summary.totalEmployees).fill({}),
+    fees:       [{ amount: String(summary.revenue) }],
+    salary:     [{ baseSalary: String(summary.revenue - summary.profit) }],
+    activities: [], actionLogs: [], schools: {}, users: [],
+    classes: [], subjects: [], accounts: [], attendance: [],
   };
-
-  db.actionLogs = [action, ...db.actionLogs].slice(0, 20);
-  db.activities = [`${label} clicked in ${module}`, ...db.activities].slice(0, 8);
-  await writeDb(db);
-
-  return action;
 }
 
-export async function findUser(email: string): Promise<User | null> {
-  const db = await readDb();
-  return db.users.find((u) => u.email.toLowerCase() === email.toLowerCase()) ?? null;
-}
+// ─── School profile ───────────────────────────────────────────────────────────
 
-export async function createUser(email: string, password: string): Promise<User> {
-  const db = await readDb();
-  const user: User = {
-    id: `user-${Date.now()}`,
-    email,
-    password,
-    createdAt: new Date().toISOString(),
+export async function getSchoolForUser(_userId: string): Promise<SchoolProfile> {
+  const data = await apiFetch('/school/profile').catch(() => null);
+  return data ?? {
+    id: '', name: '', representative: '', email: '',
+    contactNumber: '', schoolType: '', targetSubdomain: '',
+    status: 'draft' as const, setupProgress: 0,
   };
-  db.users = [user, ...db.users];
-  await writeDb(db);
-  return user;
+}
+
+export async function updateSchoolForUser(_userId: string, payload: Partial<SchoolProfile>) {
+  return apiFetch('/school/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+// ─── Activity log (no-op — server handles this internally) ────────────────────
+
+export async function logAction(_module: string, _label: string) {
+  return { id: `action-${Date.now()}`, label: _label, module: _module, createdAt: new Date().toISOString() };
 }
