@@ -17,16 +17,16 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE SCHEMA IF NOT EXISTS alumni;
 
 -- ---------------------------------------------------------------------------
--- Enum Types (PostgreSQL 14+ IF NOT EXISTS syntax)
+-- Enum Types
 -- ---------------------------------------------------------------------------
-CREATE TYPE IF NOT EXISTS public.admission_status  AS ENUM ('Under Review', 'Passed', 'Not Accepted');
-CREATE TYPE IF NOT EXISTS public.document_status   AS ENUM ('submitted', 'approved', 'rejected', 'pending');
-CREATE TYPE IF NOT EXISTS public.payment_method    AS ENUM ('cash', 'gcash', 'bank_transfer', 'credit_card');
-CREATE TYPE IF NOT EXISTS public.payment_status    AS ENUM ('pending', 'paid', 'failed', 'refunded');
-CREATE TYPE IF NOT EXISTS public.reschedule_status AS ENUM ('pending', 'approved', 'rejected');
-CREATE TYPE IF NOT EXISTS public.exam_result       AS ENUM ('PASSED', 'FAILED');
-CREATE TYPE IF NOT EXISTS public.school_level      AS ENUM ('College', 'Senior High', 'Junior High', 'Graduate');
-CREATE TYPE IF NOT EXISTS public.applicant_type    AS ENUM ('New Student', 'Transferee', 'Returnee', 'Cross-enrollee');
+DO $$ BEGIN CREATE TYPE public.admission_status  AS ENUM ('Under Review', 'Passed', 'Not Accepted'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE public.document_status   AS ENUM ('submitted', 'approved', 'rejected', 'pending'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE public.payment_method    AS ENUM ('cash', 'gcash', 'bank_transfer', 'credit_card'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE public.payment_status    AS ENUM ('pending', 'paid', 'failed', 'refunded'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE public.reschedule_status AS ENUM ('pending', 'approved', 'rejected'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE public.exam_result       AS ENUM ('PASSED', 'FAILED'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE public.school_level      AS ENUM ('College', 'Senior High', 'Junior High', 'Graduate'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE public.applicant_type    AS ENUM ('New Student', 'Transferee', 'Returnee', 'Cross-enrollee'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- =============================================================================
 -- SECTION 1: AUTH / PORTAL
