@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 
-const BE_URL = process.env.BE_URL ?? "http://localhost:4001";
+const INSTITUTION_SERVICE_URL = process.env.INSTITUTION_SERVICE_URL ?? "http://localhost:3002";
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -8,7 +8,7 @@ export async function GET() {
   if (!userId) return Response.json({}, { status: 401 });
 
   try {
-    const beRes = await fetch(`${BE_URL}/api/institution/profile`, {
+    const beRes = await fetch(`${INSTITUTION_SERVICE_URL}/api/institution/profile`, {
       headers: { "x-user-id": userId },
     });
     const data = await beRes.json();
@@ -25,7 +25,7 @@ export async function PATCH(request: Request) {
 
   try {
     const body = await request.json();
-    const beRes = await fetch(`${BE_URL}/api/institution/profile`, {
+    const beRes = await fetch(`${INSTITUTION_SERVICE_URL}/api/institution/profile`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
