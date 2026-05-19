@@ -808,6 +808,50 @@ function StaffLoginView() {
   const [tableSearch, setTableSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
+  const [editingEmp, setEditingEmp] = useState<EmpRow | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editRole, setEditRole] = useState("");
+  const [editUsername, setEditUsername] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
+  const [editSuccess, setEditSuccess] = useState(false);
+  const [editError, setEditError] = useState("");
+
+  function openEdit(emp: EmpRow) {
+    setEditingEmp(emp);
+    setEditName(emp.name ?? "");
+    setEditRole(emp.role ?? "");
+    setEditUsername(emp.username ?? "");
+    setEditPassword("");
+    setEditSuccess(false);
+    setEditError("");
+  }
+
+  async function handleEditSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingEmp) return;
+    setEditError("");
+    if (!editName.trim() || !editRole) { setEditError("Name and role are required."); return; }
+    setEditLoading(true);
+    try {
+      const payload: Record<string, string> = { name: editName, role: editRole, username: editUsername };
+      if (editPassword.trim()) payload.password = editPassword;
+      const res = await fetch(`/api/employees/${editingEmp.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Failed to update employee.");
+      setEditSuccess(true);
+      if (results) setResults(results.map(r => r.id === editingEmp.id ? { ...r, ...payload } : r));
+      setTimeout(() => setEditingEmp(null), 1500);
+    } catch (err: unknown) {
+      setEditError(err instanceof Error ? err.message : "Failed to update.");
+    } finally {
+      setEditLoading(false);
+    }
+  }
+
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     setFormError("");
@@ -989,7 +1033,10 @@ function StaffLoginView() {
                     <td className="px-5 py-3.5 text-gray-600">{emp.username ?? "—"}</td>
                     <td className="px-5 py-3.5 text-gray-300 font-mono tracking-widest">••••••••</td>
                     <td className="px-5 py-3.5">
-                      <button className="px-3 py-1.5 text-[11px] font-bold text-primary border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors">
+                      <button
+                        onClick={() => openEdit(emp)}
+                        className="px-3 py-1.5 text-[11px] font-bold text-primary border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors"
+                      >
                         Edit
                       </button>
                     </td>
@@ -1021,6 +1068,63 @@ function StaffLoginView() {
           </div>
         </div>
       </div>
+
+      {editingEmp && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 space-y-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-black text-gray-900">Edit Staff Login</h3>
+                <p className="text-sm text-gray-500 mt-0.5">{editingEmp.name ?? "—"}</p>
+              </div>
+              <button onClick={() => setEditingEmp(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+            </div>
+            {editSuccess ? (
+              <div className="text-center py-8 space-y-3">
+                <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                  <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <p className="font-bold text-green-700">Staff login updated!</p>
+              </div>
+            ) : (
+              <form onSubmit={handleEditSubmit} className="space-y-4">
+                <div className="relative">
+                  <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">Name <span className="text-red-500">*</span></span>
+                  <input value={editName} onChange={e => setEditName(e.target.value)}
+                    className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" />
+                </div>
+                <div className="relative">
+                  <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">Role <span className="text-red-500">*</span></span>
+                  <select value={editRole} onChange={e => setEditRole(e.target.value)}
+                    className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary appearance-none">
+                    <option value="">Select Role</option>
+                    <option value="teacher">Teacher</option>
+                    <option value="admin">Admin</option>
+                    <option value="staff">Staff</option>
+                  </select>
+                </div>
+                <div className="relative">
+                  <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">Username</span>
+                  <input value={editUsername} onChange={e => setEditUsername(e.target.value)}
+                    className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" />
+                </div>
+                <div className="relative">
+                  <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">New Password</span>
+                  <input type="password" value={editPassword} onChange={e => setEditPassword(e.target.value)} placeholder="Leave blank to keep current"
+                    className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" />
+                </div>
+                {editError && <p className="text-sm text-red-500 font-medium">{editError}</p>}
+                <div className="flex gap-3 pt-2">
+                  <button type="button" onClick={() => setEditingEmp(null)} className="flex-1 h-12 rounded-xl border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50">Cancel</button>
+                  <button type="submit" disabled={editLoading} className="flex-1 h-12 bg-primary text-white font-black rounded-xl hover:bg-primary/90 disabled:opacity-60">
+                    {editLoading ? "Saving..." : "Save Changes"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1030,16 +1134,17 @@ function GenerateFeesInvoiceView() {
   const [month, setMonth] = useState("");
   const [hasBankAccount, setHasBankAccount] = useState<boolean | null>(null);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generatedCount, setGeneratedCount] = useState<number | null>(null);
 
   useEffect(() => {
     setHasBankAccount(!!localStorage.getItem("campus_fees_account"));
   }, []);
 
-  function handleGenerate(e: React.FormEvent) {
+  async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    setSuccess(false);
+    setGeneratedCount(null);
     if (!className.trim() || !month) {
       setError("Please fill in all required fields.");
       return;
@@ -1048,7 +1153,35 @@ function GenerateFeesInvoiceView() {
       setError("Please configure your bank account info under General Settings → Accounts For Fees Invoice first.");
       return;
     }
-    setSuccess(true);
+    setGenerating(true);
+    try {
+      const res = await fetch(`/api/students?search=${encodeURIComponent(className.trim())}`);
+      const students: Record<string, string>[] = await res.json();
+      const matching = students.filter(s =>
+        (s.class ?? "").toLowerCase().includes(className.trim().toLowerCase())
+      );
+      await Promise.all(
+        matching.map(s =>
+          fetch("/api/fees", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              studentId: s.studentId ?? s.id,
+              studentName: s.name ?? "",
+              class: s.class ?? className,
+              month,
+              status: "unpaid",
+              type: "invoice",
+            }),
+          })
+        )
+      );
+      setGeneratedCount(matching.length);
+    } catch {
+      setError("Failed to generate invoices. Please try again.");
+    } finally {
+      setGenerating(false);
+    }
   }
 
   if (hasBankAccount === null) return null;
@@ -1103,15 +1236,15 @@ function GenerateFeesInvoiceView() {
           </div>
 
           {error && <p className="text-sm text-red-500 font-medium text-center">{error}</p>}
-          {success && <p className="text-sm text-green-600 font-bold text-center">Invoice generated successfully!</p>}
+          {generatedCount !== null && (<p className="text-sm text-green-600 font-bold text-center">{generatedCount === 0 ? "No students found in that class." : `✓ Generated ${generatedCount} invoice(s) for ${className}`}</p>)}
 
           <div className="flex justify-center">
             <button
               type="submit"
-              disabled={!hasBankAccount}
+              disabled={!hasBankAccount || generating}
               className="bg-primary text-white font-black px-12 py-4 rounded-full hover:scale-[1.02] transition-all shadow-lg shadow-primary/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              Generate Now
+              {generating ? "Generating..." : "Generate Now"}
             </button>
           </div>
         </form>
@@ -1126,6 +1259,15 @@ function CollectFeesView() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
+  const [collectingStudent, setCollectingStudent] = useState<Record<string, string> | null>(null);
+  const [feeAmount, setFeeAmount] = useState("");
+  const [feeMonth, setFeeMonth] = useState("");
+  const [feeMethod, setFeeMethod] = useState("Cash");
+  const [feeNotes, setFeeNotes] = useState("");
+  const [feeLoading, setFeeLoading] = useState(false);
+  const [feeSuccess, setFeeSuccess] = useState(false);
+  const [feeError, setFeeError] = useState("");
+
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     if (!query.trim()) return;
@@ -1139,6 +1281,39 @@ function CollectFeesView() {
       setResults([]);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleCollectFee(e: React.FormEvent) {
+    e.preventDefault();
+    setFeeError("");
+    if (!feeAmount.trim() || !feeMonth) { setFeeError("Amount and month are required."); return; }
+    setFeeLoading(true);
+    try {
+      const res = await fetch("/api/fees", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: collectingStudent?.studentId ?? collectingStudent?.id ?? "",
+          studentName: collectingStudent?.name ?? "",
+          class: collectingStudent?.class ?? "",
+          amount: feeAmount,
+          month: feeMonth,
+          paymentMethod: feeMethod,
+          notes: feeNotes,
+          status: "paid",
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to record payment.");
+      setFeeSuccess(true);
+      setTimeout(() => {
+        setCollectingStudent(null);
+        setFeeAmount(""); setFeeMonth(""); setFeeMethod("Cash"); setFeeNotes(""); setFeeSuccess(false);
+      }, 1500);
+    } catch (err: unknown) {
+      setFeeError(err instanceof Error ? err.message : "Failed to record payment.");
+    } finally {
+      setFeeLoading(false);
     }
   }
 
@@ -1194,7 +1369,10 @@ function CollectFeesView() {
                     <td className="px-6 py-4 text-gray-500">{student.studentId ?? student.data?.studentId ?? student.id}</td>
                     <td className="px-6 py-4 text-gray-500">{student.class ?? student.data?.class ?? "—"}</td>
                     <td className="px-6 py-4">
-                      <button className="px-4 py-1.5 bg-primary text-white text-xs font-bold rounded-full hover:bg-primary/90 transition-colors">
+                      <button
+                        onClick={() => { setCollectingStudent(student); setFeeAmount(""); setFeeMonth(""); setFeeMethod("Cash"); setFeeNotes(""); setFeeError(""); setFeeSuccess(false); }}
+                        className="px-4 py-1.5 bg-primary text-white text-xs font-bold rounded-full hover:bg-primary/90 transition-colors"
+                      >
                         Collect Fee
                       </button>
                     </td>
@@ -1205,6 +1383,60 @@ function CollectFeesView() {
           </div>
         )}
       </div>
+
+      {collectingStudent && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 space-y-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-black text-gray-900">Collect Fee</h3>
+                <p className="text-sm text-gray-500 mt-0.5">{collectingStudent.name ?? "—"} · {collectingStudent.class ?? "—"}</p>
+              </div>
+              <button onClick={() => setCollectingStudent(null)} className="text-gray-400 hover:text-gray-600 transition-colors"><X className="w-5 h-5" /></button>
+            </div>
+            {feeSuccess ? (
+              <div className="text-center py-8 space-y-3">
+                <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                  <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <p className="font-bold text-green-700">Payment recorded successfully!</p>
+              </div>
+            ) : (
+              <form onSubmit={handleCollectFee} className="space-y-4">
+                <div className="relative">
+                  <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">Amount <span className="text-red-500">*</span></span>
+                  <input type="number" min="0" step="0.01" value={feeAmount} onChange={e => setFeeAmount(e.target.value)} placeholder="0.00"
+                    className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" />
+                </div>
+                <div className="relative">
+                  <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">Fees Month <span className="text-red-500">*</span></span>
+                  <input type="month" value={feeMonth} onChange={e => setFeeMonth(e.target.value)}
+                    className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" />
+                </div>
+                <div className="relative">
+                  <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">Payment Method <span className="text-red-500">*</span></span>
+                  <select value={feeMethod} onChange={e => setFeeMethod(e.target.value)}
+                    className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary appearance-none">
+                    <option>Cash</option><option>Online Transfer</option><option>Check</option>
+                  </select>
+                </div>
+                <div className="relative">
+                  <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">Notes</span>
+                  <input type="text" value={feeNotes} onChange={e => setFeeNotes(e.target.value)} placeholder="Optional"
+                    className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" />
+                </div>
+                {feeError && <p className="text-sm text-red-500 font-medium">{feeError}</p>}
+                <div className="flex gap-3 pt-2">
+                  <button type="button" onClick={() => setCollectingStudent(null)} className="flex-1 h-12 rounded-xl border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-colors">Cancel</button>
+                  <button type="submit" disabled={feeLoading} className="flex-1 h-12 bg-primary text-white font-black rounded-xl hover:bg-primary/90 transition-all disabled:opacity-60">
+                    {feeLoading ? "Saving..." : "Record Payment"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

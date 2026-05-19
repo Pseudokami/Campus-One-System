@@ -197,57 +197,121 @@ function FeesParticularsView() {
 }
 
 function AccountsFeesInvoiceView() {
+  type BankEntry = { bankName: string; address: string; accountNumber: string; instructions: string };
+
+  const [bankName, setBankName] = useState("");
+  const [address, setAddress] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [instructions, setInstructions] = useState("");
+  const [banks, setBanks] = useState<BankEntry[]>([]);
+  const [formError, setFormError] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("campus_fees_account");
+      if (stored) setBanks(JSON.parse(stored));
+    } catch {}
+  }, []);
+
+  function handleAddBank(e: FormEvent) {
+    e.preventDefault();
+    setFormError("");
+    if (!bankName.trim() || !accountNumber.trim()) {
+      setFormError("Bank Name and Account Number are required.");
+      return;
+    }
+    const entry: BankEntry = { bankName, address, accountNumber, instructions };
+    const updated = [...banks, entry];
+    setBanks(updated);
+    localStorage.setItem("campus_fees_account", JSON.stringify(updated));
+    setSaved(true);
+    setBankName(""); setAddress(""); setAccountNumber(""); setInstructions("");
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  function removeBank(index: number) {
+    const updated = banks.filter((_, i) => i !== index);
+    setBanks(updated);
+    if (updated.length === 0) localStorage.removeItem("campus_fees_account");
+    else localStorage.setItem("campus_fees_account", JSON.stringify(updated));
+  }
+
   return (
     <div className="grid grid-cols-1 xl:grid-cols-[1fr_1.5fr] gap-8">
       <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm h-fit">
         <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase mb-8 text-center">Add New Bank</h2>
-        <div className="space-y-6">
-          <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-gray-50 border-2 border-dashed border-gray-200 mb-8">
-             <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
-               <Plus className="w-6 h-6 text-gray-500" />
-             </div>
-             <button className="bg-primary text-white px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest">Choose Logo</button>
-             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Max size 500kb</p>
-          </div>
-          {["Bank Name", "Bank/Branch Address", "Account Number", "Instructions"].map((label) => (
+        <form onSubmit={handleAddBank} className="space-y-5">
+          {[
+            { label: "Bank Name", value: bankName, set: setBankName, required: true },
+            { label: "Bank/Branch Address", value: address, set: setAddress, required: false },
+            { label: "Account Number", value: accountNumber, set: setAccountNumber, required: true },
+          ].map(({ label, value, set, required }) => (
             <label key={label} className="block">
-              <span className="text-[10px] font-black text-primary uppercase tracking-widest px-1">{label}*</span>
-              {label === "Instructions" ? (
-                <textarea className="mt-2 h-32 w-full rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-900 outline-none focus:border-[#F59E0B]" placeholder="Write instructions..." />
-              ) : (
-                <input className="mt-2 h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-[#F59E0B]" placeholder={`Your ${label}`} />
-              )}
+              <span className="text-[10px] font-black text-primary uppercase tracking-widest px-1">
+                {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+              </span>
+              <input
+                value={value}
+                onChange={e => set(e.target.value)}
+                className="mt-2 h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition"
+                placeholder={`Your ${label}`}
+              />
             </label>
           ))}
-          <button className="w-full bg-primary text-white py-4 rounded-xl text-sm font-black uppercase tracking-widest flex items-center justify-center gap-2 mt-4">
+          <label className="block">
+            <span className="text-[10px] font-black text-primary uppercase tracking-widest px-1">Instructions</span>
+            <textarea
+              value={instructions}
+              onChange={e => setInstructions(e.target.value)}
+              className="mt-2 h-28 w-full rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-900 outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition resize-none"
+              placeholder="Write payment instructions..."
+            />
+          </label>
+          {formError && <p className="text-xs text-red-500 font-medium">{formError}</p>}
+          {saved && <p className="text-xs text-green-600 font-bold">Bank account saved!</p>}
+          <button
+            type="submit"
+            className="w-full bg-primary text-white py-4 rounded-xl text-sm font-black uppercase tracking-widest flex items-center justify-center gap-2"
+          >
             <Plus className="w-4 h-4" /> Add Bank
           </button>
-        </div>
+        </form>
       </div>
-      
+
       <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm h-fit">
-        <div className="p-6 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-           <h3 className="font-bold text-gray-900 uppercase text-[11px] tracking-widest">Active Bank Accounts</h3>
-           <div className="flex items-center gap-2">
-             <span className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Show</span>
-             <select className="bg-white border border-gray-200 rounded-lg text-[10px] px-2 py-1 outline-none text-gray-900 font-bold">
-               <option>10</option>
-             </select>
-           </div>
+        <div className="p-6 border-b border-gray-200 bg-gray-50">
+          <h3 className="font-bold text-gray-900 uppercase text-[11px] tracking-widest">Active Bank Accounts</h3>
         </div>
         <table className="w-full text-left text-[13px]">
           <thead className="bg-primary text-white text-[10px] font-black uppercase tracking-widest">
             <tr>
               <th className="px-6 py-4">Bank Name</th>
-              <th className="px-6 py-4">Logo</th>
               <th className="px-6 py-4">Account No.</th>
+              <th className="px-6 py-4">Address</th>
               <th className="px-6 py-4">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            <tr className="bg-gray-50">
-              <td colSpan={4} className="px-6 py-20 text-center text-gray-500 uppercase font-bold tracking-widest opacity-30">No data available in table</td>
-            </tr>
+            {banks.length === 0 ? (
+              <tr className="bg-gray-50">
+                <td colSpan={4} className="px-6 py-16 text-center text-gray-400 uppercase font-bold tracking-widest text-xs">No bank accounts added yet</td>
+              </tr>
+            ) : banks.map((b, i) => (
+              <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}>
+                <td className="px-6 py-4 font-semibold text-gray-900">{b.bankName}</td>
+                <td className="px-6 py-4 text-gray-600 font-mono">{b.accountNumber}</td>
+                <td className="px-6 py-4 text-gray-500">{b.address || "—"}</td>
+                <td className="px-6 py-4">
+                  <button
+                    onClick={() => removeBank(i)}
+                    className="px-3 py-1.5 text-[11px] font-bold text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                  >
+                    Remove
+                  </button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
