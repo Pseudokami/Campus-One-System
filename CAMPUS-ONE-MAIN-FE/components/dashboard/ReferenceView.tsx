@@ -882,26 +882,95 @@ function StaffLoginView() {
 }
 
 function GenerateFeesInvoiceView() {
+  const [className, setClassName] = useState("");
+  const [month, setMonth] = useState("");
+  const [hasBankAccount, setHasBankAccount] = useState<boolean | null>(null);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    setHasBankAccount(!!localStorage.getItem("campus_fees_account"));
+  }, []);
+
+  function handleGenerate(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setSuccess(false);
+    if (!className.trim() || !month) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+    if (!hasBankAccount) {
+      setError("Please configure your bank account info under General Settings → Accounts For Fees Invoice first.");
+      return;
+    }
+    setSuccess(true);
+  }
+
+  if (hasBankAccount === null) return null;
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="rounded-2xl border border-gray-200 bg-white p-8 flex flex-col items-center justify-center gap-6 shadow-sm min-h-[400px]">
+      {!hasBankAccount && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-800 font-medium">
+            Bank account information is required before generating invoices.{" "}
+            <a href="/general-settings?tab=accounts-fees-invoice" className="font-bold underline hover:text-amber-900">
+              Configure it in General Settings
+            </a>
+            .
+          </p>
+        </div>
+      )}
+
+      <div className="rounded-2xl border border-gray-200 bg-white p-8 flex flex-col items-center gap-6 shadow-sm">
         <div className="text-center space-y-2">
           <h3 className="text-lg font-bold text-gray-900">Generate Fees Invoice</h3>
-          <p className="text-gray-500 text-sm">Select a class and month to generate invoices for all students.</p>
+          <p className="text-gray-500 text-sm">Enter a class and select a month to generate invoices for all students.</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-lg">
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 bg-white px-2 relative z-10 -mb-2 w-fit">Select Class*</label>
-            <select className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all appearance-none"><option>Select*</option></select>
+
+        <form onSubmit={handleGenerate} className="w-full max-w-lg space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="relative w-full">
+              <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">
+                Class <span className="text-red-500">*</span>
+              </span>
+              <input
+                type="text"
+                value={className}
+                onChange={(e) => setClassName(e.target.value)}
+                placeholder="e.g. Grade 10 - Section A"
+                className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 placeholder:text-gray-400"
+              />
+            </div>
+
+            <div className="relative w-full">
+              <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">
+                Month <span className="text-red-500">*</span>
+              </span>
+              <input
+                type="month"
+                value={month}
+                onChange={(e) => setMonth(e.target.value)}
+                className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+              />
+            </div>
           </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 bg-white px-2 relative z-10 -mb-2 w-fit">Select Month*</label>
-            <select className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all appearance-none"><option>Select*</option></select>
+
+          {error && <p className="text-sm text-red-500 font-medium text-center">{error}</p>}
+          {success && <p className="text-sm text-green-600 font-bold text-center">Invoice generated successfully!</p>}
+
+          <div className="flex justify-center">
+            <button
+              type="submit"
+              disabled={!hasBankAccount}
+              className="bg-primary text-white font-black px-12 py-4 rounded-full hover:scale-[1.02] transition-all shadow-lg shadow-primary/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              Generate Now
+            </button>
           </div>
-        </div>
-        <button className="bg-primary text-white font-black px-12 py-4 rounded-full hover:scale-[1.02] transition-all shadow-lg shadow-primary/20">
-          Generate Now
-        </button>
+        </form>
       </div>
     </div>
   );

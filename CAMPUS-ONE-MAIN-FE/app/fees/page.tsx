@@ -19,7 +19,6 @@ export default async function FeesPage({ searchParams }: PageProps) {
         <SectionHeader
           title={activeSubtab ? `Fees / ${activeTitle}` : "Fees"}
           description=""
-          action="Add Fee"
         />
         <SubtabPanel
           parent="Fees"
