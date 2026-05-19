@@ -1,10 +1,10 @@
-const BE_URL = process.env.BE_URL ?? "http://localhost:4001";
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL ?? "http://localhost:3001";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    const beRes = await fetch(`${BE_URL}/api/auth/signup`, {
+    const beRes = await fetch(`${AUTH_SERVICE_URL}/api/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
