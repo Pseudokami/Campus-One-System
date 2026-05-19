@@ -1687,84 +1687,279 @@ function FeesDefaultersView() {
 }
 
 function StudentsAttendanceView() {
-  const [activeTab, setActiveTab] = useState("Manual Attendance");
   const today = new Date().toISOString().split("T")[0];
+  type Person = Record<string, string>;
+  type AttendanceRow = { person: Person; status: string };
+
+  const [date, setDate] = useState(today);
+  const [classInput, setClassInput] = useState("");
+  const [rows, setRows] = useState<AttendanceRow[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  async function handleLoad(e: React.FormEvent) {
+    e.preventDefault();
+    setFormError("");
+    if (!date || !classInput.trim()) { setFormError("Date and Class are required."); return; }
+    setLoading(true);
+    setSaveSuccess(false);
+    try {
+      const res = await fetch(`/api/students?search=${encodeURIComponent(classInput.trim())}`);
+      const data: Person[] = await res.json();
+      const matching = data.filter(s => (s.class ?? "").toLowerCase().includes(classInput.trim().toLowerCase()));
+      setRows(matching.map(p => ({ person: p, status: "present" })));
+    } catch { setRows([]); } finally { setLoading(false); }
+  }
+
+  async function handleSave() {
+    if (!rows || rows.length === 0) return;
+    setSaving(true);
+    setSaveSuccess(false);
+    try {
+      await Promise.all(rows.map(r =>
+        fetch("/api/attendance", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            personId: r.person.studentId ?? r.person.id,
+            personName: r.person.name ?? "",
+            class: r.person.class ?? classInput,
+            date,
+            status: r.status,
+            type: "student",
+          }),
+        })
+      ));
+      setSaveSuccess(true);
+    } catch { /* silently fail */ } finally { setSaving(false); }
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-center gap-1 bg-white/5 p-1 rounded-xl w-fit mx-auto">
-        {["Manual Attendance", "Card Scanning"].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={cn(
-              "px-6 py-2 rounded-lg text-xs font-bold transition-all",
-              activeTab === tab ? "bg-white text-black shadow-lg" : "text-gray-500 hover:text-gray-900"
-            )}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
+      <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm space-y-6">
+        <h3 className="text-xl font-black text-gray-900">Add/Update Attendance</h3>
 
-      <div className="rounded-2xl border border-gray-200 bg-white p-12 shadow-sm flex flex-col items-center text-center space-y-8">
-        <div className="space-y-2">
-          <h3 className="text-2xl font-black text-gray-900">Add/update attendance</h3>
-          <div className="flex items-center justify-center gap-4 text-[10px] font-bold uppercase tracking-widest">
-            <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-primary"></div> Required*</span>
-            <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-muted-foreground"></div> Optional</span>
+        <form onSubmit={handleLoad} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="relative">
+            <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">
+              Date <span className="text-red-500">*</span>
+            </span>
+            <input type="date" value={date} onChange={e => setDate(e.target.value)}
+              className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" />
           </div>
-        </div>
-
-        <form className="w-full max-w-lg space-y-6">
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 bg-white px-2 relative z-10 -mb-2 w-fit">Date*</label>
-            <input type="date" defaultValue={today} className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+          <div className="relative">
+            <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">
+              Class <span className="text-red-500">*</span>
+            </span>
+            <input type="text" value={classInput} onChange={e => setClassInput(e.target.value)}
+              placeholder="e.g. Grade 10 - Section A"
+              className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 placeholder:text-gray-400" />
           </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 bg-white px-2 relative z-10 -mb-2 w-fit">Search Class*</label>
-            <select className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all appearance-none"><option>Select Class</option></select>
-          </div>
-          <button className="bg-primary text-white font-black px-12 py-3 rounded-full hover:scale-[1.02] transition-all flex items-center gap-2 mx-auto">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>
-            Submit
+          {formError && <p className="text-sm text-red-500 font-medium col-span-2">{formError}</p>}
+          <button type="submit" className="col-span-2 md:w-fit bg-primary text-white font-black px-10 py-3 rounded-full hover:scale-[1.02] transition-all shadow-lg shadow-primary/20">
+            {loading ? "Loading..." : "Add/Update Attendance"}
           </button>
         </form>
       </div>
+
+      {rows !== null && (
+        <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+          {rows.length === 0 ? (
+            <p className="px-8 py-12 text-center text-gray-400 italic text-sm">No students found in &ldquo;{classInput}&rdquo;. Make sure students are added with a matching class name.</p>
+          ) : (
+            <div className="p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold text-gray-700">{rows.length} student{rows.length !== 1 ? "s" : ""} — {new Date(date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
+                {saveSuccess && <span className="text-xs font-bold text-green-600">✓ Attendance saved!</span>}
+              </div>
+              <div className="overflow-x-auto rounded-xl border border-gray-100">
+                <table className="w-full text-left text-[13px]">
+                  <thead>
+                    <tr className="bg-primary text-white">
+                      <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider">#</th>
+                      <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider">Name</th>
+                      <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider">ID</th>
+                      <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((row, i) => (
+                      <tr key={row.person.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}>
+                        <td className="px-5 py-3 text-gray-400">{i + 1}</td>
+                        <td className="px-5 py-3 font-semibold text-gray-900">{row.person.name ?? "—"}</td>
+                        <td className="px-5 py-3 text-gray-500">{row.person.studentId ?? row.person.id}</td>
+                        <td className="px-5 py-3">
+                          <select
+                            value={row.status}
+                            onChange={e => setRows(rows.map((r, j) => j === i ? { ...r, status: e.target.value } : r))}
+                            className={cn(
+                              "rounded-lg border px-3 py-1.5 text-xs font-bold outline-none transition",
+                              row.status === "present" ? "bg-green-50 border-green-200 text-green-700" :
+                              row.status === "absent"  ? "bg-red-50 border-red-200 text-red-700" :
+                              "bg-amber-50 border-amber-200 text-amber-700"
+                            )}
+                          >
+                            <option value="present">Present</option>
+                            <option value="absent">Absent</option>
+                            <option value="late">Late</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex justify-end">
+                <button onClick={handleSave} disabled={saving}
+                  className="bg-primary text-white font-black px-10 py-3 rounded-full hover:scale-[1.02] transition-all shadow-lg shadow-primary/20 disabled:opacity-60">
+                  {saving ? "Saving..." : "Save Attendance"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 function EmployeesAttendanceView() {
   const today = new Date().toISOString().split("T")[0];
+  type Person = Record<string, string>;
+  type AttendanceRow = { person: Person; status: string };
+
+  const [date, setDate] = useState(today);
+  const [searchInput, setSearchInput] = useState("");
+  const [rows, setRows] = useState<AttendanceRow[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  async function handleLoad(e: React.FormEvent) {
+    e.preventDefault();
+    setFormError("");
+    if (!date) { setFormError("Date is required."); return; }
+    setLoading(true);
+    setSaveSuccess(false);
+    try {
+      const qs = searchInput.trim() ? `?search=${encodeURIComponent(searchInput.trim())}` : "";
+      const res = await fetch(`/api/employees${qs}`);
+      const data: Person[] = await res.json();
+      setRows(Array.isArray(data) ? data.map(p => ({ person: p, status: "present" })) : []);
+    } catch { setRows([]); } finally { setLoading(false); }
+  }
+
+  async function handleSave() {
+    if (!rows || rows.length === 0) return;
+    setSaving(true);
+    setSaveSuccess(false);
+    try {
+      await Promise.all(rows.map(r =>
+        fetch("/api/attendance", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            personId: r.person.employeeId ?? r.person.id,
+            personName: r.person.name ?? "",
+            department: r.person.department ?? "",
+            date,
+            status: r.status,
+            type: "employee",
+          }),
+        })
+      ));
+      setSaveSuccess(true);
+    } catch { /* silently fail */ } finally { setSaving(false); }
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-center gap-1 bg-white/5 p-1 rounded-xl w-fit mx-auto">
-        <button className="bg-white text-black px-6 py-2 rounded-lg text-xs font-bold shadow-lg">Manual Attendance</button>
-        <button className="text-gray-500 hover:text-gray-900 px-6 py-2 rounded-lg text-xs font-bold">Card Scanning</button>
-      </div>
+      <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm space-y-6">
+        <h3 className="text-xl font-black text-gray-900">Add/Update Attendance</h3>
 
-      <div className="rounded-2xl border border-gray-200 bg-white p-12 shadow-sm flex flex-col items-center text-center space-y-8">
-        <div className="space-y-2">
-          <h3 className="text-2xl font-black text-gray-900">Add/update attendance</h3>
-          <div className="flex items-center justify-center gap-4 text-[10px] font-bold uppercase tracking-widest">
-            <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-primary"></div> Required*</span>
-            <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-muted-foreground"></div> Optional</span>
+        <form onSubmit={handleLoad} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="relative">
+            <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">
+              Date <span className="text-red-500">*</span>
+            </span>
+            <input type="date" value={date} onChange={e => setDate(e.target.value)}
+              className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" />
           </div>
-        </div>
-
-        <form className="w-full max-w-lg space-y-6">
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 bg-white px-2 relative z-10 -mb-2 w-fit">Date*</label>
-            <input type="date" defaultValue={today} className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+          <div className="relative">
+            <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">
+              Search Employee
+            </span>
+            <input type="text" value={searchInput} onChange={e => setSearchInput(e.target.value)}
+              placeholder="Leave blank to load all"
+              className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 placeholder:text-gray-400" />
           </div>
-          <button className="bg-primary text-white font-black px-12 py-3 rounded-full hover:scale-[1.02] transition-all flex items-center gap-2 mx-auto">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>
-            Submit
+          {formError && <p className="text-sm text-red-500 font-medium col-span-2">{formError}</p>}
+          <button type="submit" className="col-span-2 md:w-fit bg-primary text-white font-black px-10 py-3 rounded-full hover:scale-[1.02] transition-all shadow-lg shadow-primary/20">
+            {loading ? "Loading..." : "Add/Update Attendance"}
           </button>
         </form>
       </div>
+
+      {rows !== null && (
+        <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+          {rows.length === 0 ? (
+            <p className="px-8 py-12 text-center text-gray-400 italic text-sm">No employees found. Make sure employees are added first.</p>
+          ) : (
+            <div className="p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold text-gray-700">{rows.length} employee{rows.length !== 1 ? "s" : ""} — {new Date(date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
+                {saveSuccess && <span className="text-xs font-bold text-green-600">✓ Attendance saved!</span>}
+              </div>
+              <div className="overflow-x-auto rounded-xl border border-gray-100">
+                <table className="w-full text-left text-[13px]">
+                  <thead>
+                    <tr className="bg-primary text-white">
+                      <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider">#</th>
+                      <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider">Name</th>
+                      <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider">Role</th>
+                      <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((row, i) => (
+                      <tr key={row.person.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}>
+                        <td className="px-5 py-3 text-gray-400">{i + 1}</td>
+                        <td className="px-5 py-3 font-semibold text-gray-900">{row.person.name ?? "—"}</td>
+                        <td className="px-5 py-3 text-gray-500">{row.person.role ?? "—"}</td>
+                        <td className="px-5 py-3">
+                          <select
+                            value={row.status}
+                            onChange={e => setRows(rows.map((r, j) => j === i ? { ...r, status: e.target.value } : r))}
+                            className={cn(
+                              "rounded-lg border px-3 py-1.5 text-xs font-bold outline-none transition",
+                              row.status === "present" ? "bg-green-50 border-green-200 text-green-700" :
+                              row.status === "absent"  ? "bg-red-50 border-red-200 text-red-700" :
+                              "bg-amber-50 border-amber-200 text-amber-700"
+                            )}
+                          >
+                            <option value="present">Present</option>
+                            <option value="absent">Absent</option>
+                            <option value="late">Late</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex justify-end">
+                <button onClick={handleSave} disabled={saving}
+                  className="bg-primary text-white font-black px-10 py-3 rounded-full hover:scale-[1.02] transition-all shadow-lg shadow-primary/20 disabled:opacity-60">
+                  {saving ? "Saving..." : "Save Attendance"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
