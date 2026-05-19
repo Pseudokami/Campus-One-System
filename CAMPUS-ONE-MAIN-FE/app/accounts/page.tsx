@@ -1,9 +1,8 @@
 import { getActiveChild } from "@/components/dashboard/data";
-import { ResourceManager } from "@/components/dashboard/ResourceManager";
-import { resourceConfigs } from "@/components/dashboard/resourceConfig";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { SubtabPanel } from "@/components/ui/SubtabPanel";
+import { AccountsView } from "@/components/accounts/AccountsView";
 
 type PageProps = {
   searchParams: Promise<{ tab?: string | string[] }>;
@@ -12,7 +11,7 @@ type PageProps = {
 export default async function AccountsPage({ searchParams }: PageProps) {
   const { tab } = await searchParams;
   const activeSubtab = getActiveChild("/accounts", tab);
-  const activeTitle = activeSubtab?.label ?? "Admin Users";
+  const activeTitle = activeSubtab?.label ?? "Chart Of Account";
 
   return (
     <AppLayout>
@@ -20,14 +19,13 @@ export default async function AccountsPage({ searchParams }: PageProps) {
         <SectionHeader
           title={activeSubtab ? `Accounts / ${activeTitle}` : "Accounts"}
           description=""
-          action="Invite User"
         />
         <SubtabPanel
           parent="Accounts"
           active={activeTitle}
           description=""
         />
-        <ResourceManager config={resourceConfigs.accounts} activeSubtab={activeTitle} />
+        <AccountsView activeSubtab={activeTitle} />
       </div>
     </AppLayout>
   );

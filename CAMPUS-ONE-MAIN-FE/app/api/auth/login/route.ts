@@ -17,6 +17,9 @@ export async function POST(request: Request) {
 
     const cookieStore = await cookies();
     cookieStore.set("user_id", data.user.id, { httpOnly: true, path: "/", sameSite: "lax" });
+    if (data.user?.email) {
+      cookieStore.set("user_email", data.user.email, { httpOnly: true, path: "/", sameSite: "lax" });
+    }
 
     return Response.json(data);
   } catch {
