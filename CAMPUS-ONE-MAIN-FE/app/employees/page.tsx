@@ -19,7 +19,6 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
         <SectionHeader
           title={activeSubtab ? `Employees / ${activeTitle}` : "Employees"}
           description=""
-          action="Add Employee"
         />
         <SubtabPanel
           parent="Employees"

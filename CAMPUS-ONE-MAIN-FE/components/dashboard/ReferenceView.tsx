@@ -797,82 +797,226 @@ function JobLetterView() {
 }
 
 function StaffLoginView() {
+  const PAGE_SIZE = 10;
+  type EmpRow = { id: string; data: Record<string, string> };
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedRole, setSelectedRole] = useState("");
+  const [results, setResults] = useState<EmpRow[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [tableSearch, setTableSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  async function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    setFormError("");
+    if (!searchQuery.trim() && !selectedRole) {
+      setFormError("Please fill in at least one required field.");
+      return;
+    }
+    setLoading(true);
+    setCurrentPage(1);
+    try {
+      const qs = new URLSearchParams();
+      if (searchQuery.trim()) qs.set("search", searchQuery.trim());
+      const res = await fetch(`/api/employees?${qs.toString()}`);
+      const data = await res.json();
+      setResults(Array.isArray(data) ? data : []);
+    } catch {
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function exportCSV() {
+    if (!results || results.length === 0) return;
+    const headers = ["#", "Staff Name", "Role", "Username"];
+    const rows = results.map((emp, i) => [
+      String(i + 1),
+      emp.data?.name ?? "",
+      emp.data?.role ?? "",
+      emp.data?.username ?? "",
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "staff_logins.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const filtered = (results ?? []).filter(emp => {
+    if (!tableSearch.trim()) return true;
+    const q = tableSearch.toLowerCase();
+    return (
+      (emp.data?.name ?? "").toLowerCase().includes(q) ||
+      (emp.data?.role ?? "").toLowerCase().includes(q) ||
+      (emp.data?.username ?? "").toLowerCase().includes(q)
+    );
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const startEntry = filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const endEntry = Math.min(currentPage * PAGE_SIZE, filtered.length);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_2fr] gap-6 items-start">
       {/* Search Sidebar */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm space-y-8">
-        <div className="flex flex-col items-center text-center gap-2">
-          <div className="flex items-center gap-2 text-gray-900 font-black text-xl">
-            <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-            Search
-          </div>
+      <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm space-y-6">
+        <div className="flex items-center gap-2 text-gray-900 font-black text-xl">
+          <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          Search
         </div>
 
-        <div className="space-y-6">
+        <form onSubmit={handleSearch} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 bg-white px-2 relative z-10 -mb-2 w-fit">Search Employee*</label>
-            <input 
-              type="text" 
-              placeholder="Search Employee" 
-              className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all"
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">
+              Search Employee <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search Employee"
+              className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 bg-white px-2 relative z-10 -mb-2 w-fit">Select Role*</label>
-            <select className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all appearance-none">
-              <option>Select*</option>
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">
+              Select Role <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={selectedRole}
+              onChange={e => setSelectedRole(e.target.value)}
+              className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-primary outline-none transition-all appearance-none"
+            >
+              <option value="">Select Role</option>
+              <option value="teacher">Teacher</option>
+              <option value="admin">Admin</option>
+              <option value="staff">Staff</option>
             </select>
           </div>
-          <div className="text-center">
-            <button className="text-primary hover:underline text-xs font-bold uppercase tracking-widest">or, Reload All</button>
-          </div>
-        </div>
+
+          {formError && <p className="text-xs text-red-500 font-medium">{formError}</p>}
+
+          <button
+            type="submit"
+            className="w-full h-12 bg-primary text-white font-black rounded-xl hover:bg-primary/90 transition-all"
+          >
+            {loading ? "Searching..." : "Search"}
+          </button>
+        </form>
       </div>
 
       {/* Results Table */}
       <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
-        <div className="p-8 space-y-6">
+        <div className="p-6 space-y-5">
+          {/* Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap gap-2">
-              {["Copy", "CSV", "Excel", "PDF", "Print"].map(tool => (
-                <button key={tool} className="px-4 py-2 bg-white/5 border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:bg-white/10 transition-all">{tool}</button>
-              ))}
-              <button className="px-4 py-2 bg-white/5 border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:bg-white/10 transition-all flex items-center gap-2">
-                Column visibility <ChevronDown className="w-3 h-3" />
+              <button
+                onClick={exportCSV}
+                className="px-4 py-2 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50 transition-all flex items-center gap-1.5"
+              >
+                <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5l5 5v11a2 2 0 01-2 2z"/></svg>
+                Excel
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="px-4 py-2 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50 transition-all flex items-center gap-1.5"
+              >
+                <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                PDF
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="px-4 py-2 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50 transition-all flex items-center gap-1.5"
+              >
+                <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                Print
               </button>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500 font-medium">Search:</span>
-              <input type="text" className="h-10 rounded-lg border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+              <input
+                type="text"
+                value={tableSearch}
+                onChange={e => { setTableSearch(e.target.value); setCurrentPage(1); }}
+                className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 focus:border-primary outline-none transition-all"
+              />
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-gray-200">
+          {/* Table */}
+          <div className="overflow-x-auto rounded-xl border border-gray-100">
             <table className="w-full text-left text-[13px]">
-              <thead className="bg-gray-50 text-gray-500 font-bold uppercase tracking-wider border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-4">ID</th>
-                  <th className="px-6 py-4">Staff Name</th>
-                  <th className="px-6 py-4">Role</th>
-                  <th className="px-6 py-4">Username</th>
-                  <th className="px-6 py-4">Password</th>
-                  <th className="px-6 py-4">Actions</th>
+              <thead>
+                <tr className="bg-primary text-white">
+                  <th className="px-5 py-3.5 font-bold text-xs uppercase tracking-wider">#</th>
+                  <th className="px-5 py-3.5 font-bold text-xs uppercase tracking-wider">Staff Name</th>
+                  <th className="px-5 py-3.5 font-bold text-xs uppercase tracking-wider">Role</th>
+                  <th className="px-5 py-3.5 font-bold text-xs uppercase tracking-wider">Username</th>
+                  <th className="px-5 py-3.5 font-bold text-xs uppercase tracking-wider">Password</th>
+                  <th className="px-5 py-3.5 font-bold text-xs uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500 italic bg-gray-50">
-                    No data available in table
-                  </td>
-                </tr>
+                {loading && (
+                  <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 text-sm">Searching...</td></tr>
+                )}
+                {!loading && results === null && (
+                  <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 italic text-sm">Use the search panel to find staff.</td></tr>
+                )}
+                {!loading && results !== null && paged.length === 0 && (
+                  <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 italic text-sm">No data available in table</td></tr>
+                )}
+                {!loading && paged.map((emp, i) => (
+                  <tr key={emp.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}>
+                    <td className="px-5 py-3.5 text-gray-400 font-medium">{startEntry + i}</td>
+                    <td className="px-5 py-3.5 font-semibold text-gray-900">{emp.data?.name ?? "—"}</td>
+                    <td className="px-5 py-3.5">
+                      <span className="px-2.5 py-1 bg-primary/10 text-primary rounded-full text-[11px] font-bold uppercase tracking-wide">
+                        {emp.data?.role ?? "—"}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 text-gray-600">{emp.data?.username ?? "—"}</td>
+                    <td className="px-5 py-3.5 text-gray-300 font-mono tracking-widest">••••••••</td>
+                    <td className="px-5 py-3.5">
+                      <button className="px-3 py-1.5 text-[11px] font-bold text-primary border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors">
+                        Edit
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
-          <div className="flex items-center justify-between text-xs font-medium text-gray-500 px-2">
-            <span>Showing 0 to 0 of 0 entries</span>
-            <div className="flex gap-4">
-              <button className="hover:text-gray-900 transition-colors">Previous</button>
-              <button className="hover:text-gray-900 transition-colors">Next</button>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between text-xs font-medium text-gray-500 px-1">
+            <span>Showing {startEntry} to {endEntry} of {filtered.length} entries</span>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
             </div>
           </div>
         </div>
