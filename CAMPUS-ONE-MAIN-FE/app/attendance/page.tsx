@@ -19,7 +19,6 @@ export default async function AttendancePage({ searchParams }: PageProps) {
         <SectionHeader
           title={activeSubtab ? `Attendance / ${activeTitle}` : "Attendance"}
           description=""
-          action="Create Report"
         />
         <SubtabPanel
           parent="Attendance"

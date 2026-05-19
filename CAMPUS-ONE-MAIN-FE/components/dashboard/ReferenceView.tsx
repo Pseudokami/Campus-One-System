@@ -1966,15 +1966,103 @@ function EmployeesAttendanceView() {
 
 function ClassWiseReportView() {
   const today = new Date().toISOString().split("T")[0];
+  type AttendanceRecord = Record<string, string>;
+
+  const [date, setDate] = useState(today);
+  const [records, setRecords] = useState<AttendanceRecord[] | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/attendance?search=${encodeURIComponent(date)}`);
+      const data = await res.json();
+      setRecords(Array.isArray(data) ? data.filter((r: AttendanceRecord) => r.date === date || r.date?.startsWith(date)) : []);
+    } catch { setRecords([]); } finally { setLoading(false); }
+  }
+
+  const byClass = records
+    ? records.reduce<Record<string, AttendanceRecord[]>>((acc, r) => {
+        const key = r.class ?? r.personClass ?? "Unclassified";
+        acc[key] = [...(acc[key] ?? []), r];
+        return acc;
+      }, {})
+    : null;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-        <div className="max-w-xs">
-          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 bg-white px-2 relative z-10 -mb-2 w-fit">Date*</label>
-          <input type="date" defaultValue={today} className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
-        </div>
+      <div className="rounded-2xl border border-gray-200 bg-white p-10 shadow-sm flex flex-col items-center gap-6">
+        <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-5">
+          <div className="relative">
+            <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">
+              Date <span className="text-red-500">*</span>
+            </span>
+            <input
+              type="date"
+              value={date}
+              onChange={e => setDate(e.target.value)}
+              className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-primary text-white font-black py-3.5 rounded-full hover:scale-[1.02] transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-60"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/>
+            </svg>
+            {loading ? "Loading..." : "Submit"}
+          </button>
+        </form>
       </div>
+
+      {byClass && Object.keys(byClass).length === 0 && (
+        <div className="rounded-2xl border border-gray-200 bg-white px-8 py-12 shadow-sm text-center text-gray-400 italic text-sm">
+          No attendance records found for {new Date(date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}.
+        </div>
+      )}
+
+      {byClass && Object.entries(byClass).map(([className, rows]) => (
+        <div key={className} className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+          <div className="px-6 py-4 bg-primary/5 border-b border-primary/10 flex items-center justify-between">
+            <h4 className="font-black text-gray-900">{className}</h4>
+            <div className="flex gap-3 text-xs font-bold">
+              <span className="text-green-600">{rows.filter(r => r.status === "present").length} Present</span>
+              <span className="text-red-500">{rows.filter(r => r.status === "absent").length} Absent</span>
+              <span className="text-amber-500">{rows.filter(r => r.status === "late").length} Late</span>
+            </div>
+          </div>
+          <table className="w-full text-left text-[13px]">
+            <thead>
+              <tr className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider border-b border-gray-100">
+                <th className="px-5 py-3">#</th>
+                <th className="px-5 py-3">Name</th>
+                <th className="px-5 py-3">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {rows.map((r, i) => (
+                <tr key={r.id ?? i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
+                  <td className="px-5 py-3 text-gray-400">{i + 1}</td>
+                  <td className="px-5 py-3 font-semibold text-gray-900">{r.personName ?? "—"}</td>
+                  <td className="px-5 py-3">
+                    <span className={cn(
+                      "px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide",
+                      r.status === "present" ? "bg-green-100 text-green-700" :
+                      r.status === "absent"  ? "bg-red-100 text-red-600" :
+                      "bg-amber-100 text-amber-600"
+                    )}>
+                      {r.status ?? "—"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ))}
     </div>
   );
 }
