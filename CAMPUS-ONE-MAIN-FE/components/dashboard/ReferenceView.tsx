@@ -1210,21 +1210,213 @@ function CollectFeesView() {
 }
 
 function FeesPaidSlipView() {
+  type Student = { id: string; data: Record<string, string> };
+
+  const [query, setQuery] = useState("");
+  const [month, setMonth] = useState("");
+  const [results, setResults] = useState<Student[] | null>(null);
+  const [selected, setSelected] = useState<Student | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const [slip, setSlip] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [schoolName, setSchoolName] = useState("Campus One");
+
+  useEffect(() => {
+    fetch("/api/school").then(r => r.json()).then(d => {
+      if (d?.name) setSchoolName(d.name);
+    }).catch(() => {});
+  }, []);
+
+  async function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    if (!query.trim()) return;
+    setLoading(true);
+    setSearched(true);
+    setSelected(null);
+    setSlip(false);
+    try {
+      const res = await fetch(`/api/students?search=${encodeURIComponent(query.trim())}`);
+      const data = await res.json();
+      setResults(Array.isArray(data) ? data : []);
+    } catch {
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setFormError("");
+    if (!selected) { setFormError("Please search for and select a student first."); return; }
+    if (!month) { setFormError("Please select a fees month."); return; }
+    setSlip(true);
+  }
+
+  const monthLabel = month
+    ? new Date(month + "-02").toLocaleDateString("en-US", { month: "long", year: "numeric" })
+    : "";
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="rounded-2xl border border-gray-200 bg-white p-8 flex flex-col items-center justify-center gap-6 shadow-sm min-h-[400px]">
-        <div className="text-center space-y-2">
+      <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm space-y-6">
+        <div className="space-y-1">
           <h3 className="text-lg font-bold text-gray-900">Fees Paid Slips</h3>
-          <p className="text-gray-500 text-sm">View and print payment slips for students.</p>
+          <p className="text-gray-500 text-sm">Search for a student and select a month to generate their payment slip.</p>
         </div>
-        <div className="relative w-full max-w-md">
-          <input 
-            type="text" 
-            placeholder="Search Student" 
-            className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all"
+
+        {/* Student search */}
+        <form onSubmit={handleSearch} className="relative w-full">
+          <input
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Search student by name or ID"
+            className="w-full h-14 rounded-full border border-gray-200 bg-white pl-6 pr-16 text-sm text-gray-900 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
           />
-        </div>
+          <button
+            type="submit"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-primary hover:bg-primary/90 transition-colors"
+          >
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
+        </form>
+
+        {loading && <p className="text-center text-sm text-gray-400 py-4">Searching...</p>}
+        {!loading && searched && results?.length === 0 && (
+          <p className="text-center text-sm text-gray-400 py-4">No students found for &ldquo;{query}&rdquo;.</p>
+        )}
+
+        {/* Search results table */}
+        {!loading && results && results.length > 0 && !selected && (
+          <div className="rounded-xl border border-gray-100 overflow-hidden">
+            <table className="w-full text-[13px] text-left">
+              <thead>
+                <tr className="bg-primary text-white">
+                  <th className="px-5 py-3 text-xs font-bold uppercase tracking-wider">Name</th>
+                  <th className="px-5 py-3 text-xs font-bold uppercase tracking-wider">ID</th>
+                  <th className="px-5 py-3 text-xs font-bold uppercase tracking-wider">Class</th>
+                  <th className="px-5 py-3 text-xs font-bold uppercase tracking-wider">Select</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {results.map((s, i) => (
+                  <tr key={s.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}>
+                    <td className="px-5 py-3 font-semibold text-gray-900">{s.data?.name ?? "—"}</td>
+                    <td className="px-5 py-3 text-gray-500">{s.data?.studentId ?? s.id}</td>
+                    <td className="px-5 py-3 text-gray-500">{s.data?.class ?? "—"}</td>
+                    <td className="px-5 py-3">
+                      <button
+                        onClick={() => { setSelected(s); setSlip(false); }}
+                        className="px-3 py-1.5 text-[11px] font-bold text-primary border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors"
+                      >
+                        Select
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Selected student banner */}
+        {selected && (
+          <div className="rounded-xl border border-primary/20 bg-primary/5 px-6 py-4 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Selected Student</p>
+              <p className="mt-1 font-bold text-gray-900">{selected.data?.name ?? "—"}</p>
+              <p className="text-xs text-gray-500">{selected.data?.class ?? "—"}</p>
+            </div>
+            <button
+              onClick={() => { setSelected(null); setSlip(false); setResults(null); setSearched(false); setQuery(""); }}
+              className="text-xs text-gray-400 hover:text-gray-600 font-bold transition-colors"
+            >
+              Change
+            </button>
+          </div>
+        )}
+
+        {/* Month + submit */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="relative w-full max-w-xs">
+            <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">
+              Fees Month <span className="text-red-500">*</span>
+            </span>
+            <input
+              type="month"
+              value={month}
+              onChange={e => { setMonth(e.target.value); setSlip(false); }}
+              className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+            />
+          </div>
+
+          {formError && <p className="text-sm text-red-500 font-medium">{formError}</p>}
+
+          <button
+            type="submit"
+            className="bg-primary text-white font-black px-10 py-3.5 rounded-full hover:scale-[1.02] transition-all shadow-lg shadow-primary/20"
+          >
+            Generate Slip
+          </button>
+        </form>
       </div>
+
+      {/* Generated slip */}
+      {slip && selected && month && (
+        <div className="rounded-2xl border-2 border-primary/20 bg-white shadow-sm overflow-hidden print:shadow-none print:border-none">
+          <div className="bg-primary px-8 py-6 text-white text-center">
+            <h2 className="text-xl font-black uppercase tracking-widest">{schoolName}</h2>
+            <p className="text-white/70 text-sm font-medium mt-1">Official Fees Paid Slip</p>
+          </div>
+          <div className="p-8 space-y-6">
+            <div className="grid grid-cols-2 gap-6 text-sm">
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Student Name</p>
+                <p className="mt-1 font-bold text-gray-900">{selected.data?.name ?? "—"}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Student ID</p>
+                <p className="mt-1 font-bold text-gray-900">{selected.data?.studentId ?? selected.id}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Class</p>
+                <p className="mt-1 font-bold text-gray-900">{selected.data?.class ?? "—"}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Fees Month</p>
+                <p className="mt-1 font-bold text-gray-900">{monthLabel}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Payment Status</p>
+                <span className="mt-1 inline-block px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">PAID</span>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Date Generated</p>
+                <p className="mt-1 font-bold text-gray-900">
+                  {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                </p>
+              </div>
+            </div>
+
+            <div className="border-t border-dashed border-gray-200 pt-6 flex items-center justify-between">
+              <p className="text-xs text-gray-400 italic">This is a system-generated slip.</p>
+              <button
+                onClick={() => window.print()}
+                className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white text-xs font-black rounded-full hover:bg-primary/90 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                </svg>
+                Print Slip
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
