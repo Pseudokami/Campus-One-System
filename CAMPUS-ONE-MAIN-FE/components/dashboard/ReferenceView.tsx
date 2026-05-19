@@ -977,20 +977,89 @@ function GenerateFeesInvoiceView() {
 }
 
 function CollectFeesView() {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Record<string, string>[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
+
+  async function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    if (!query.trim()) return;
+    setLoading(true);
+    setSearched(true);
+    try {
+      const res = await fetch(`/api/students?search=${encodeURIComponent(query.trim())}`);
+      const data = await res.json();
+      setResults(Array.isArray(data) ? data : []);
+    } catch {
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="rounded-2xl border border-gray-200 bg-white p-8 flex flex-col items-center justify-center gap-6 shadow-sm min-h-[400px]">
-        <div className="relative w-full max-w-md">
-          <input 
-            type="text" 
-            placeholder="Search Student by ID or Name" 
-            className="w-full h-14 rounded-full border border-gray-200 bg-white pl-6 pr-12 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all"
-          />
-          <button className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-gray-50 transition-colors">
-            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-          </button>
+      <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm space-y-6">
+        <div className="space-y-1">
+          <h3 className="text-lg font-bold text-gray-900">Collect Fees of a Student</h3>
+          <p className="text-gray-500 text-sm">Search for a student to collect fees.</p>
         </div>
-        <p className="text-gray-500 text-sm font-medium">Search for a student to collect fees.</p>
+
+        <form onSubmit={handleSearch} className="relative w-full">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by student name or ID"
+            className="w-full h-14 rounded-full border border-gray-200 bg-white pl-6 pr-16 text-sm text-gray-900 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+          />
+          <button
+            type="submit"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-primary hover:bg-primary/90 transition-colors"
+          >
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
+        </form>
+
+        {loading && (
+          <p className="text-center text-sm text-gray-400 font-medium py-8">Searching...</p>
+        )}
+
+        {!loading && searched && results !== null && results.length === 0 && (
+          <p className="text-center text-sm text-gray-400 font-medium py-8">No students found for &ldquo;{query}&rdquo;.</p>
+        )}
+
+        {!loading && results && results.length > 0 && (
+          <div className="overflow-x-auto rounded-xl border border-gray-200">
+            <table className="w-full text-left text-[13px]">
+              <thead className="bg-gray-50 text-gray-500 font-bold uppercase tracking-wider border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-4">Name</th>
+                  <th className="px-6 py-4">ID</th>
+                  <th className="px-6 py-4">Class</th>
+                  <th className="px-6 py-4">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {results.map((student) => (
+                  <tr key={student.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-gray-900">{student.name ?? student.data?.name ?? "—"}</td>
+                    <td className="px-6 py-4 text-gray-500">{student.studentId ?? student.data?.studentId ?? student.id}</td>
+                    <td className="px-6 py-4 text-gray-500">{student.class ?? student.data?.class ?? "—"}</td>
+                    <td className="px-6 py-4">
+                      <button className="px-4 py-1.5 bg-primary text-white text-xs font-bold rounded-full hover:bg-primary/90 transition-colors">
+                        Collect Fee
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
