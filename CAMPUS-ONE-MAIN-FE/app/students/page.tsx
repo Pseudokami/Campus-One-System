@@ -19,7 +19,7 @@ export default async function StudentsPage({ searchParams }: PageProps) {
         <SectionHeader
           title={activeSubtab ? `Students / ${activeTitle}` : "Students"}
           description=""
-          action="Import Students"
+          action={activeTitle === "Admission Letter" ? undefined : "Import Students"}
         />
         <SubtabPanel
           parent="Students"

@@ -47,7 +47,7 @@ export const resourceConfigs: Record<ResourceName, ResourceConfig> = {
   students: {
     resource: "students",
     title: "Student Setup",
-    description: "Prepare student records and enrollment statuses for the future student service.",
+    description: "Manage student records, levels, sections, and enrollment statuses.",
     statusLabel: "Student records",
     fields: [
       { key: "id", label: "Student ID", placeholder: "Enter student ID" },
@@ -114,7 +114,7 @@ export const resourceConfigs: Record<ResourceName, ResourceConfig> = {
   attendance: {
     resource: "attendance",
     title: "Attendance Setup",
-    description: "Monitor class attendance placeholders and readiness for daily reporting.",
+    description: "Monitor class attendance counts and daily reporting details.",
     statusLabel: "Attendance rows",
     fields: [
       { key: "class", label: "Class", placeholder: "Enter class name" },

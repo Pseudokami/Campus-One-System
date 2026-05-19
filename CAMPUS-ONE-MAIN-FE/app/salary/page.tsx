@@ -1,7 +1,6 @@
 import { getActiveChild } from "@/components/dashboard/data";
-import { ResourceManager } from "@/components/dashboard/ResourceManager";
-import { resourceConfigs } from "@/components/dashboard/resourceConfig";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { SalaryView } from "@/components/salary/SalaryView";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { SubtabPanel } from "@/components/ui/SubtabPanel";
 
@@ -20,14 +19,13 @@ export default async function SalaryPage({ searchParams }: PageProps) {
         <SectionHeader
           title={activeSubtab ? `Salary / ${activeTitle}` : "Salary"}
           description=""
-          action="Prepare Payroll"
         />
         <SubtabPanel
           parent="Salary"
           active={activeTitle}
           description=""
         />
-        <ResourceManager config={resourceConfigs.salary} activeSubtab={activeTitle} />
+        <SalaryView activeSubtab={activeTitle} />
       </div>
     </AppLayout>
   );

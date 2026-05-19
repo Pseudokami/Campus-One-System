@@ -1,12 +1,78 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Plus, Users, BookOpen, AlertCircle, X, ChevronDown } from "lucide-react";
+import { Calendar, Plus, Users, BookOpen, AlertCircle, X, Search, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ReferenceViewProps {
   parent: "Classes" | "Subjects" | "Students" | "Employees" | "Fees" | "Attendance";
   activeSubtab: string;
+}
+
+type MockStudent = {
+  id: string;
+  name: string;
+  father: string;
+  className: string;
+  section: string;
+  admissionDate: string;
+  phone: string;
+};
+
+type AttendanceReportRow = {
+  date: string;
+  id: string;
+  name: string;
+  group: string;
+  type?: string;
+  status: "Present" | "Absent" | "Late";
+  time?: string;
+};
+
+type StudentLookupRecord = {
+  id: string;
+  name?: string;
+  studentId?: string;
+  class?: string;
+  data?: {
+    name?: string;
+    studentId?: string;
+    class?: string;
+  };
+};
+
+const mockAdmissionStudents: MockStudent[] = [
+  { id: "ST-1001", name: "Andrea Reyes", father: "Miguel Reyes", className: "Grade 7", section: "A", admissionDate: "2026-05-06", phone: "0917 234 1188" },
+  { id: "ST-1002", name: "Ben Santos", father: "Ramon Santos", className: "Grade 8", section: "B", admissionDate: "2026-05-08", phone: "0928 441 0930" },
+  { id: "ST-1003", name: "Clara Lim", father: "Dennis Lim", className: "Grade 9", section: "A", admissionDate: "2026-05-12", phone: "0916 778 5590" },
+];
+
+const mockStudentAttendance: AttendanceReportRow[] = [
+  { date: "2026-05-01", id: "ST-1001", name: "Andrea Reyes", group: "Grade 7 - A", status: "Present" },
+  { date: "2026-05-02", id: "ST-1002", name: "Ben Santos", group: "Grade 8 - B", status: "Late" },
+  { date: "2026-05-07", id: "ST-1003", name: "Clara Lim", group: "Grade 9 - A", status: "Absent" },
+  { date: "2026-05-15", id: "ST-1001", name: "Andrea Reyes", group: "Grade 7 - A", status: "Present" },
+];
+
+const mockEmployeeAttendance: AttendanceReportRow[] = [
+  { date: "2026-05-01", id: "EMP-2101", name: "Carla Mendoza", group: "Faculty", type: "Teacher", status: "Present", time: "07:36 AM" },
+  { date: "2026-05-03", id: "EMP-2102", name: "Rafael Dizon", group: "Registrar", type: "Staff", status: "Present", time: "07:52 AM" },
+  { date: "2026-05-08", id: "EMP-2103", name: "Tessa Villanueva", group: "Guidance", type: "Staff", status: "Late", time: "08:21 AM" },
+  { date: "2026-05-16", id: "EMP-2104", name: "Marco Lim", group: "IT", type: "Staff", status: "Absent", time: "-" },
+];
+
+function formatDate(value: string) {
+  return new Date(`${value}T00:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
+function formatDay(value: string) {
+  return new Date(`${value}T00:00:00`).toLocaleDateString("en-US", { weekday: "long" });
+}
+
+function attendanceStatusClass(status: AttendanceReportRow["status"]) {
+  if (status === "Present") return "bg-green-100 text-green-700";
+  if (status === "Absent") return "bg-red-100 text-red-600";
+  return "bg-amber-100 text-amber-700";
 }
 
 export function ReferenceView({ parent, activeSubtab }: ReferenceViewProps) {
@@ -53,7 +119,7 @@ export function ReferenceView({ parent, activeSubtab }: ReferenceViewProps) {
 
   return (
     <div className="p-8 text-center text-gray-500 border border-dashed border-gray-200 rounded-2xl">
-      Content for {parent} / {activeSubtab} is under development to match the reference.
+      No content is available for {parent} / {activeSubtab}.
     </div>
   );
 }
@@ -207,20 +273,77 @@ function AdmissionForm() {
 }
 
 function AdmissionLetterView() {
+  const [query, setQuery] = useState("");
+  const [selectedId, setSelectedId] = useState(mockAdmissionStudents[0].id);
+  const filteredStudents = mockAdmissionStudents.filter((student) =>
+    [student.id, student.name, student.father, student.className, student.section].some((value) =>
+      value.toLowerCase().includes(query.trim().toLowerCase()),
+    ),
+  );
+  const selectedStudent = mockAdmissionStudents.find((student) => student.id === selectedId) ?? filteredStudents[0] ?? mockAdmissionStudents[0];
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="rounded-2xl border border-gray-200 bg-white p-8 flex flex-col items-center justify-center gap-6 shadow-sm min-h-[400px]">
-        <div className="relative w-full max-w-md">
-          <input 
-            type="text" 
-            placeholder="Search Student" 
-            className="w-full h-14 rounded-full border border-gray-200 bg-white pl-6 pr-12 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all"
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[380px_1fr]">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <label className="relative block">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search student"
+            className="h-12 w-full rounded-xl border border-gray-200 bg-white pl-11 pr-4 text-sm text-gray-900 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
           />
-          <button className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-gray-50 transition-colors">
-            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-          </button>
+        </label>
+
+        <div className="mt-5 overflow-hidden rounded-xl border border-gray-200">
+          {filteredStudents.map((student) => (
+            <button
+              key={student.id}
+              onClick={() => setSelectedId(student.id)}
+              className={cn(
+                "block w-full border-b border-gray-100 px-4 py-3 text-left text-sm transition last:border-b-0",
+                selectedStudent.id === student.id ? "bg-primary/10 text-gray-900" : "hover:bg-gray-50",
+              )}
+              type="button"
+            >
+              <span className="block font-bold">{student.name}</span>
+              <span className="text-xs text-gray-500">{student.id} | {student.className} - {student.section}</span>
+            </button>
+          ))}
+          {filteredStudents.length === 0 ? (
+            <p className="px-4 py-8 text-center text-sm italic text-gray-400">No matching student found.</p>
+          ) : null}
         </div>
-        <p className="text-gray-500 text-sm font-medium">Search for a student to generate their admission letter.</p>
+      </div>
+
+      <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+        <div className="mx-auto min-h-[560px] max-w-3xl border border-gray-200 bg-white p-10 shadow-sm">
+          <div className="border-b-4 border-primary pb-6 text-center">
+            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-primary">Campus One</p>
+            <h2 className="mt-2 text-3xl font-black text-gray-900">Admission Letter</h2>
+            <p className="mt-1 text-sm text-gray-500">Official student admission confirmation</p>
+          </div>
+          <div className="mt-10 space-y-5 text-sm leading-7 text-gray-700">
+            <p>Date: <span className="font-bold text-gray-900">{formatDate(selectedStudent.admissionDate)}</span></p>
+            <p>Dear <span className="font-bold text-gray-900">{selectedStudent.father}</span>,</p>
+            <p>
+              We are pleased to confirm that <span className="font-bold text-gray-900">{selectedStudent.name}</span> has been
+              admitted to <span className="font-bold text-gray-900">{selectedStudent.className} - Section {selectedStudent.section}</span> for the current academic year.
+            </p>
+            <div className="mt-8 grid grid-cols-1 gap-3 rounded-xl bg-gray-50 p-5 sm:grid-cols-2">
+              <p><span className="block text-[10px] font-bold uppercase tracking-widest text-gray-500">Student ID</span>{selectedStudent.id}</p>
+              <p><span className="block text-[10px] font-bold uppercase tracking-widest text-gray-500">Phone</span>{selectedStudent.phone}</p>
+              <p><span className="block text-[10px] font-bold uppercase tracking-widest text-gray-500">Class</span>{selectedStudent.className}</p>
+              <p><span className="block text-[10px] font-bold uppercase tracking-widest text-gray-500">Section</span>{selectedStudent.section}</p>
+            </div>
+            <p className="pt-6">Kindly keep this letter for your records and present it during enrollment verification.</p>
+          </div>
+          <div className="mt-14 flex justify-between text-sm font-bold text-gray-900">
+            <span>Registrar Office</span>
+            <span>Campus One</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1255,11 +1378,11 @@ function GenerateFeesInvoiceView() {
 
 function CollectFeesView() {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Record<string, string>[] | null>(null);
+  const [results, setResults] = useState<StudentLookupRecord[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
-  const [collectingStudent, setCollectingStudent] = useState<Record<string, string> | null>(null);
+  const [collectingStudent, setCollectingStudent] = useState<StudentLookupRecord | null>(null);
   const [feeAmount, setFeeAmount] = useState("");
   const [feeMonth, setFeeMonth] = useState("");
   const [feeMethod, setFeeMethod] = useState("Cash");
@@ -2068,6 +2191,8 @@ function ClassWiseReportView() {
 }
 
 function StudentsAttendanceReportView() {
+  return <AttendanceReportTable title="Students Attendance Report" rows={mockStudentAttendance} groupLabel="Class" />;
+
   const now = new Date();
   const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const dateRangeLabel = `${firstOfMonth.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} - ${now.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`;
@@ -2122,6 +2247,8 @@ function StudentsAttendanceReportView() {
 }
 
 function EmployeesAttendanceReportView() {
+  return <AttendanceReportTable title="Employees Attendance Report" rows={mockEmployeeAttendance} groupLabel="Department" showType showTime />;
+
   const now = new Date();
   const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const dateRangeLabel = `${firstOfMonth.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} - ${now.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`;
@@ -2171,6 +2298,135 @@ function EmployeesAttendanceReportView() {
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function AttendanceReportTable({
+  title,
+  rows,
+  groupLabel,
+  showType = false,
+  showTime = false,
+}: {
+  title: string;
+  rows: AttendanceReportRow[];
+  groupLabel: string;
+  showType?: boolean;
+  showTime?: boolean;
+}) {
+  const [startDate, setStartDate] = useState("2026-05-01");
+  const [endDate, setEndDate] = useState("2026-05-31");
+  const [search, setSearch] = useState("");
+  const [submittedRange, setSubmittedRange] = useState({ startDate: "2026-05-01", endDate: "2026-05-31" });
+
+  const filteredRows = rows.filter((row) => {
+    const inDateRange = row.date >= submittedRange.startDate && row.date <= submittedRange.endDate;
+    const matchesSearch = [row.date, row.id, row.name, row.group, row.type ?? "", row.status, row.time ?? ""].some((value) =>
+      value.toLowerCase().includes(search.trim().toLowerCase()),
+    );
+    return inDateRange && matchesSearch;
+  });
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmittedRange({ startDate, endDate });
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div className="space-y-8 p-8">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-xl border border-gray-200 bg-gray-50 p-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-lg font-black text-gray-900">{title}</p>
+            <p className="mt-1 text-xs font-medium text-gray-500">{formatDate(submittedRange.startDate)} - {formatDate(submittedRange.endDate)}</p>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto]">
+            <label className="block">
+              <span className="px-1 text-[10px] font-bold uppercase tracking-widest text-gray-500">Start Date</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(event) => setStartDate(event.target.value)}
+                className="mt-1 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none transition focus:border-primary"
+              />
+            </label>
+            <label className="block">
+              <span className="px-1 text-[10px] font-bold uppercase tracking-widest text-gray-500">End Date</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(event) => setEndDate(event.target.value)}
+                className="mt-1 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none transition focus:border-primary"
+              />
+            </label>
+            <button className="inline-flex h-10 items-center justify-center gap-2 self-end rounded-lg bg-primary px-5 text-xs font-black text-white transition hover:bg-primary/90" type="submit">
+              <Calendar className="h-4 w-4" />
+              Submit
+            </button>
+          </div>
+        </form>
+
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap gap-2">
+            {["Excel", "PDF", "Print"].map((tool) => (
+              <button key={tool} className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-xs font-bold text-gray-900 transition-all hover:bg-gray-50">{tool}</button>
+            ))}
+          </div>
+          <label className="relative block w-full sm:w-72">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search report"
+              className="h-10 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 outline-none transition focus:border-primary"
+            />
+          </label>
+        </div>
+
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <table className="w-full text-left text-[13px]">
+            <thead className="border-b border-gray-200 bg-primary font-black uppercase tracking-wider text-white">
+              <tr>
+                <th className="px-6 py-4">Date</th>
+                <th className="px-6 py-4">Day</th>
+                <th className="px-6 py-4">ID</th>
+                <th className="px-6 py-4">Name</th>
+                <th className="px-6 py-4">{groupLabel}</th>
+                {showType ? <th className="px-6 py-4">Type</th> : null}
+                <th className="px-6 py-4">Status</th>
+                {showTime ? <th className="px-6 py-4">Time</th> : null}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filteredRows.length === 0 ? (
+                <tr>
+                  <td colSpan={5 + (showType ? 1 : 0) + (showTime ? 1 : 0)} className="bg-gray-50 px-6 py-12 text-center text-gray-500 italic">
+                    No data available in table
+                  </td>
+                </tr>
+              ) : filteredRows.map((row) => (
+                <tr key={`${row.id}-${row.date}`} className="transition hover:bg-gray-50">
+                  <td className="px-6 py-4 font-semibold text-gray-900">{formatDate(row.date)}</td>
+                  <td className="px-6 py-4 text-gray-600">{formatDay(row.date)}</td>
+                  <td className="px-6 py-4 text-gray-600">{row.id}</td>
+                  <td className="px-6 py-4 font-bold text-gray-900">{row.name}</td>
+                  <td className="px-6 py-4 text-gray-600">{row.group}</td>
+                  {showType ? <td className="px-6 py-4 text-gray-600">{row.type}</td> : null}
+                  <td className="px-6 py-4">
+                    <span className={cn("rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide", attendanceStatusClass(row.status))}>{row.status}</span>
+                  </td>
+                  {showTime ? <td className="px-6 py-4 text-gray-600">{row.time}</td> : null}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-xs font-medium text-gray-500">
+          Showing {filteredRows.length === 0 ? "0 to 0 of 0" : `1 to ${filteredRows.length} of ${filteredRows.length}`} entries
+        </p>
       </div>
     </div>
   );
