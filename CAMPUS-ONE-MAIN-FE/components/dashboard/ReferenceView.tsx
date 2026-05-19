@@ -798,7 +798,7 @@ function JobLetterView() {
 
 function StaffLoginView() {
   const PAGE_SIZE = 10;
-  type EmpRow = { id: string; data: Record<string, string> };
+  type EmpRow = Record<string, string>;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
@@ -835,9 +835,9 @@ function StaffLoginView() {
     const headers = ["#", "Staff Name", "Role", "Username"];
     const rows = results.map((emp, i) => [
       String(i + 1),
-      emp.data?.name ?? "",
-      emp.data?.role ?? "",
-      emp.data?.username ?? "",
+      emp.name ?? "",
+      emp.role ?? "",
+      emp.username ?? "",
     ]);
     const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -853,9 +853,9 @@ function StaffLoginView() {
     if (!tableSearch.trim()) return true;
     const q = tableSearch.toLowerCase();
     return (
-      (emp.data?.name ?? "").toLowerCase().includes(q) ||
-      (emp.data?.role ?? "").toLowerCase().includes(q) ||
-      (emp.data?.username ?? "").toLowerCase().includes(q)
+      (emp.name ?? "").toLowerCase().includes(q) ||
+      (emp.role ?? "").toLowerCase().includes(q) ||
+      (emp.username ?? "").toLowerCase().includes(q)
     );
   });
 
@@ -980,13 +980,13 @@ function StaffLoginView() {
                 {!loading && paged.map((emp, i) => (
                   <tr key={emp.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}>
                     <td className="px-5 py-3.5 text-gray-400 font-medium">{startEntry + i}</td>
-                    <td className="px-5 py-3.5 font-semibold text-gray-900">{emp.data?.name ?? "—"}</td>
+                    <td className="px-5 py-3.5 font-semibold text-gray-900">{emp.name ?? "—"}</td>
                     <td className="px-5 py-3.5">
                       <span className="px-2.5 py-1 bg-primary/10 text-primary rounded-full text-[11px] font-bold uppercase tracking-wide">
-                        {emp.data?.role ?? "—"}
+                        {emp.role ?? "—"}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 text-gray-600">{emp.data?.username ?? "—"}</td>
+                    <td className="px-5 py-3.5 text-gray-600">{emp.username ?? "—"}</td>
                     <td className="px-5 py-3.5 text-gray-300 font-mono tracking-widest">••••••••</td>
                     <td className="px-5 py-3.5">
                       <button className="px-3 py-1.5 text-[11px] font-bold text-primary border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors">
@@ -1210,7 +1210,7 @@ function CollectFeesView() {
 }
 
 function FeesPaidSlipView() {
-  type Student = { id: string; data: Record<string, string> };
+  type Student = Record<string, string>;
 
   const [query, setQuery] = useState("");
   const [month, setMonth] = useState("");
@@ -1305,9 +1305,9 @@ function FeesPaidSlipView() {
               <tbody className="divide-y divide-gray-100">
                 {results.map((s, i) => (
                   <tr key={s.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}>
-                    <td className="px-5 py-3 font-semibold text-gray-900">{s.data?.name ?? "—"}</td>
-                    <td className="px-5 py-3 text-gray-500">{s.data?.studentId ?? s.id}</td>
-                    <td className="px-5 py-3 text-gray-500">{s.data?.class ?? "—"}</td>
+                    <td className="px-5 py-3 font-semibold text-gray-900">{s.name ?? "—"}</td>
+                    <td className="px-5 py-3 text-gray-500">{s.studentId ?? s.id}</td>
+                    <td className="px-5 py-3 text-gray-500">{s.class ?? "—"}</td>
                     <td className="px-5 py-3">
                       <button
                         onClick={() => { setSelected(s); setSlip(false); }}
@@ -1328,8 +1328,8 @@ function FeesPaidSlipView() {
           <div className="rounded-xl border border-primary/20 bg-primary/5 px-6 py-4 flex items-center justify-between">
             <div>
               <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Selected Student</p>
-              <p className="mt-1 font-bold text-gray-900">{selected.data?.name ?? "—"}</p>
-              <p className="text-xs text-gray-500">{selected.data?.class ?? "—"}</p>
+              <p className="mt-1 font-bold text-gray-900">{selected.name ?? "—"}</p>
+              <p className="text-xs text-gray-500">{selected.class ?? "—"}</p>
             </div>
             <button
               onClick={() => { setSelected(null); setSlip(false); setResults(null); setSearched(false); setQuery(""); }}
@@ -1376,15 +1376,15 @@ function FeesPaidSlipView() {
             <div className="grid grid-cols-2 gap-6 text-sm">
               <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Student Name</p>
-                <p className="mt-1 font-bold text-gray-900">{selected.data?.name ?? "—"}</p>
+                <p className="mt-1 font-bold text-gray-900">{selected.name ?? "—"}</p>
               </div>
               <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Student ID</p>
-                <p className="mt-1 font-bold text-gray-900">{selected.data?.studentId ?? selected.id}</p>
+                <p className="mt-1 font-bold text-gray-900">{selected.studentId ?? selected.id}</p>
               </div>
               <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Class</p>
-                <p className="mt-1 font-bold text-gray-900">{selected.data?.class ?? "—"}</p>
+                <p className="mt-1 font-bold text-gray-900">{selected.class ?? "—"}</p>
               </div>
               <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Fees Month</p>
