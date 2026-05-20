@@ -51,18 +51,13 @@ export class AuthService {
       throw new InternalServerErrorException('Failed to create portal account.');
     }
 
-    const { error: adminError } = await supabaseAdmin
-      .from('super_admins')
-      .insert({ id: authUserId, email, role: 'super_admin' });
-
-    if (adminError) {
-      await supabaseAdmin.from('portal_accounts').delete().eq('id', authUserId);
-      await supabaseAdmin.auth.admin.deleteUser(authUserId);
-      throw new InternalServerErrorException('Failed to mirror super admin account.');
-    }
+    // Best-effort mirror — role is detected from portal_accounts, not super_admins
+    try {
+      await supabaseAdmin.from('super_admins').insert({ id: authUserId, email, role: 'super_admin' });
+    } catch (_) {}
 
     // Tell institution-service to initialize an empty profile for this user.
-    // Non-blocking — signup succeeds even if institution-service is temporarily down.
+    // Non-blocking — signup succeeds even if these services are temporarily down.
     fetch(`${this.institutionServiceUrl}/api/institution/profile/init`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -70,6 +65,18 @@ export class AuthService {
     }).catch((err) => {
       console.error('[auth-service] Could not reach institution-service:', err.message);
     });
+
+    const dataServiceUrl = process.env.INSTITUTION_DATA_SERVICE_URL ?? 'http://localhost:4001';
+    fetch(`${dataServiceUrl}/api/resources/notifications`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-user-id': authUserId },
+      body: JSON.stringify({
+        title: 'Welcome to Campus One!',
+        message: 'Please complete your institute profile to get started.',
+        read: 'false',
+        created_at: new Date().toISOString(),
+      }),
+    }).catch(() => {});
 
     return {
       message: 'Account created successfully.',
@@ -103,6 +110,11 @@ export class AuthService {
         expires_in: data.session.expires_in,
       },
     };
+  }
+
+  async signOut(): Promise<{ message: string }> {
+    await supabase.auth.signOut();
+    return { message: 'Signed out successfully.' };
   }
 
   private async detectRole(email: string): Promise<string | null> {

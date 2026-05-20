@@ -10,7 +10,11 @@ export async function GET(request: Request, context: RouteContext<"/api/[resourc
   const url = new URL(request.url);
   const search = url.searchParams.get("search") ?? undefined;
 
-  return Response.json(await listResource(resource, search));
+  try {
+    return Response.json(await listResource(resource, search));
+  } catch (err: any) {
+    return Response.json({ message: err.message ?? "Request failed" }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request, context: RouteContext<"/api/[resource]">) {
@@ -22,5 +26,9 @@ export async function POST(request: Request, context: RouteContext<"/api/[resour
 
   const payload = await request.json();
 
-  return Response.json(await createResource(resource, payload), { status: 201 });
+  try {
+    return Response.json(await createResource(resource, payload), { status: 201 });
+  } catch (err: any) {
+    return Response.json({ message: err.message ?? "Request failed" }, { status: 500 });
+  }
 }

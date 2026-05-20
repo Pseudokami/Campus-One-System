@@ -2484,11 +2484,11 @@ function ClassesWithSubjectsList() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/classes").then((res) => res.json()),
-      fetch("/api/subjects").then((res) => res.json()),
+      fetch("/api/classes").then((res) => res.json()).catch(() => []),
+      fetch("/api/subjects").then((res) => res.json()).catch(() => []),
     ]).then(([classData, subjectData]) => {
-      setClasses(classData);
-      setSubjects(subjectData);
+      setClasses(Array.isArray(classData) ? classData : []);
+      setSubjects(Array.isArray(subjectData) ? subjectData : []);
     });
   }, []);
 
@@ -4234,11 +4234,11 @@ function GenerateFeesInvoiceView() {
         <form onSubmit={handleGenerate} className="w-full max-w-lg space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="relative w-full">
-              <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">Class <span className="text-red-500">*</span></span>
+              <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Class <span className="text-red-500">*</span></span>
               <input type="text" value={className} onChange={e => setClassName(e.target.value)} placeholder="e.g. Grade 10 - Section A" className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 placeholder:text-gray-400" />
             </div>
             <div className="relative w-full">
-              <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">Month <span className="text-red-500">*</span></span>
+              <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Month <span className="text-red-500">*</span></span>
               <input type="month" value={month} onChange={e => setMonth(e.target.value)} className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" />
             </div>
           </div>
@@ -4377,7 +4377,7 @@ function FeesPaidSlipView() {
         )}
         {selected && (<div className="rounded-xl border border-primary/20 bg-primary/5 px-6 py-4 flex items-center justify-between"><div><p className="text-[10px] font-bold text-primary uppercase tracking-widest">Selected Student</p><p className="mt-1 font-bold text-gray-900">{selected.name ?? "—"}</p><p className="text-xs text-gray-500">{selected.class ?? "—"}</p></div><button onClick={() => { setSelected(null); setSlip(false); setResults(null); setSearched(false); setQuery(""); }} className="text-xs text-gray-400 hover:text-gray-600 font-bold">Change</button></div>)}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative w-full max-w-xs"><span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">Fees Month <span className="text-red-500">*</span></span><input type="month" value={month} onChange={e => { setMonth(e.target.value); setSlip(false); }} className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" /></div>
+          <div className="relative w-full max-w-xs"><span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Fees Month <span className="text-red-500">*</span></span><input type="month" value={month} onChange={e => { setMonth(e.target.value); setSlip(false); }} className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" /></div>
           {formError && <p className="text-sm text-red-500 font-medium">{formError}</p>}
           <button type="submit" className="bg-primary text-white font-black px-10 py-3.5 rounded-full hover:scale-[1.02] transition-all shadow-lg shadow-primary/20">Generate Slip</button>
         </form>
@@ -4449,8 +4449,8 @@ function StudentsAttendanceView() {
       <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm space-y-6">
         <h3 className="text-xl font-black text-gray-900">Add/Update Attendance</h3>
         <form onSubmit={handleLoad} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="relative"><span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">Date <span className="text-red-500">*</span></span><input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" /></div>
-          <div className="relative"><span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">Class <span className="text-red-500">*</span></span><input type="text" value={classInput} onChange={e => setClassInput(e.target.value)} placeholder="e.g. Grade 10 - Section A" className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 placeholder:text-gray-400" /></div>
+          <div className="relative"><span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Date <span className="text-red-500">*</span></span><input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" /></div>
+          <div className="relative"><span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Class <span className="text-red-500">*</span></span><input type="text" value={classInput} onChange={e => setClassInput(e.target.value)} placeholder="e.g. Grade 10 - Section A" className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 placeholder:text-gray-400" /></div>
           {formError && <p className="text-sm text-red-500 font-medium col-span-2">{formError}</p>}
           <button type="submit" className="col-span-2 md:w-fit bg-primary text-white font-black px-10 py-3 rounded-full hover:scale-[1.02] transition-all shadow-lg shadow-primary/20">{loading ? "Loading..." : "Add/Update Attendance"}</button>
         </form>
@@ -4485,8 +4485,8 @@ function EmployeesAttendanceView() {
       <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm space-y-6">
         <h3 className="text-xl font-black text-gray-900">Add/Update Attendance</h3>
         <form onSubmit={handleLoad} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="relative"><span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">Date <span className="text-red-500">*</span></span><input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" /></div>
-          <div className="relative"><span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">Search Employee</span><input type="text" value={searchInput} onChange={e => setSearchInput(e.target.value)} placeholder="Leave blank to load all" className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 placeholder:text-gray-400" /></div>
+          <div className="relative"><span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Date <span className="text-red-500">*</span></span><input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" /></div>
+          <div className="relative"><span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Search Employee</span><input type="text" value={searchInput} onChange={e => setSearchInput(e.target.value)} placeholder="Leave blank to load all" className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 placeholder:text-gray-400" /></div>
           {formError && <p className="text-sm text-red-500 font-medium col-span-2">{formError}</p>}
           <button type="submit" className="col-span-2 md:w-fit bg-primary text-white font-black px-10 py-3 rounded-full hover:scale-[1.02] transition-all shadow-lg shadow-primary/20">{loading ? "Loading..." : "Add/Update Attendance"}</button>
         </form>
@@ -4520,7 +4520,7 @@ function ClassWiseReportView() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="rounded-2xl border border-gray-200 bg-white p-10 shadow-sm flex flex-col items-center gap-6">
         <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-5">
-          <div className="relative"><span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">Date <span className="text-red-500">*</span></span><input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" /></div>
+          <div className="relative"><span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Date <span className="text-red-500">*</span></span><input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" /></div>
           <button type="submit" disabled={loading} className="w-full bg-primary text-white font-black py-3.5 rounded-full hover:scale-[1.02] transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-60"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>{loading ? "Loading..." : "Submit"}</button>
         </form>
       </div>

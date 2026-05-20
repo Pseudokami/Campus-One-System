@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { supabaseAdmin } from './database/supabase';
 
-const VALID_RESOURCES = ['classes','subjects','students','employees','accounts','fees','salary','attendance'] as const;
+const VALID_RESOURCES = ['classes','subjects','students','employees','accounts','fees','salary','attendance','notifications'] as const;
 type ResourceName = typeof VALID_RESOURCES[number];
 
 function isValidResource(r: string): r is ResourceName {
@@ -88,6 +88,30 @@ export class InstitutionDataService {
 
     if (error) throw new Error(error.message);
     return { id, deleted: true };
+  }
+
+  async markAllNotificationsRead(institutionId: string) {
+    const { data, error } = await supabaseAdmin
+      .from('institution_resources')
+      .select('id, data')
+      .eq('institution_id', institutionId)
+      .eq('resource_type', 'notifications');
+
+    if (error) throw new Error(error.message);
+
+    const unread = (data ?? []).filter((r: any) => r.data?.read !== true);
+    if (unread.length === 0) return { updated: 0 };
+
+    await Promise.all(
+      unread.map((r: any) =>
+        supabaseAdmin
+          .from('institution_resources')
+          .update({ data: { ...r.data, read: true } })
+          .eq('id', r.id)
+      )
+    );
+
+    return { updated: unread.length };
   }
 
   async dashboard(institutionId: string) {

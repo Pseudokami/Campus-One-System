@@ -45,9 +45,9 @@ function FloatingInput({
 }) {
   return (
     <div className="relative w-full">
-      <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">
+      <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
         {label}
-        {required && <span className="text-primary ml-0.5">*</span>}
+        {required && <span className="text-red-500 ml-0.5">*</span>}
       </span>
       <input
         type={type}
@@ -76,9 +76,9 @@ function FloatingSelect({
 }) {
   return (
     <div className="relative w-full">
-      <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-primary uppercase tracking-widest">
+      <span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
         {label}
-        {required && <span className="text-primary ml-0.5">*</span>}
+        {required && <span className="text-red-500 ml-0.5">*</span>}
       </span>
       <select
         value={value}

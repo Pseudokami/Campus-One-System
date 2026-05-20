@@ -29,7 +29,7 @@ async function apiFetch(path: string, options: RequestInit = {}) {
 
 export const resourceNames: ResourceName[] = [
   'classes', 'subjects', 'students', 'employees',
-  'accounts', 'fees', 'salary', 'attendance',
+  'accounts', 'fees', 'salary', 'attendance', 'notifications',
 ];
 
 export function isResourceName(value: string): value is ResourceName {
@@ -95,6 +95,12 @@ export async function updateSchoolForUser(_userId: string, payload: Partial<Scho
     method: 'PATCH',
     body: JSON.stringify(payload),
   });
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+export async function markAllNotificationsRead() {
+  return apiFetch('/notifications/read-all', { method: 'PATCH' });
 }
 
 // ─── Activity log (no-op — server handles this internally) ────────────────────

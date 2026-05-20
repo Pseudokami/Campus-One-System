@@ -16,10 +16,10 @@ export async function POST(request: Request) {
     if (!beRes.ok) return Response.json(data, { status: beRes.status });
 
     const cookieStore = await cookies();
-    cookieStore.set("user_id", data.user.id, { httpOnly: true, path: "/", sameSite: "lax" });
-    if (data.user?.email) {
-      cookieStore.set("user_email", data.user.email, { httpOnly: true, path: "/", sameSite: "lax" });
-    }
+    const opts = { httpOnly: true, path: "/", sameSite: "lax" } as const;
+    cookieStore.set("user_id", data.user.id, opts);
+    if (data.user?.email) cookieStore.set("user_email", data.user.email, opts);
+    if (data.user?.role) cookieStore.set("user_role", data.user.role, opts);
 
     return Response.json(data);
   } catch {

@@ -44,8 +44,35 @@ export async function loginWithSupabase(email: string, password: string): Promis
 export function getCurrentUser(): AuthUser | null {
   if (typeof window === 'undefined') return null;
   const json = sessionStorage.getItem('auth_user');
-  if (!json) return null;
-  try { return JSON.parse(json) as AuthUser; } catch { return null; }
+  if (json) {
+    try { return JSON.parse(json) as AuthUser; } catch { /* fall through */ }
+  }
+  return null;
+}
+
+export async function getCurrentUserAsync(): Promise<AuthUser | null> {
+  if (typeof window !== 'undefined') {
+    const json = sessionStorage.getItem('auth_user');
+    if (json) {
+      try {
+        const user = JSON.parse(json) as AuthUser;
+        return user;
+      } catch { /* fall through */ }
+    }
+  }
+  try {
+    const res = await fetch('/api/auth/me');
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.id) return null;
+    const user: AuthUser = { id: data.id, email: data.email, role: data.role as UserRole };
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('auth_user', JSON.stringify(user));
+    }
+    return user;
+  } catch {
+    return null;
+  }
 }
 
 export async function logout(): Promise<void> {

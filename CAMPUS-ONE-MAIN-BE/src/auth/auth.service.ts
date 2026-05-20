@@ -50,16 +50,10 @@ export class AuthService {
       throw new InternalServerErrorException('Failed to create portal account.');
     }
 
-    // Step 3 — Mirror to super_admins (same DB, separate table — no FK between them)
-    const { error: adminError } = await supabaseAdmin
-      .from('super_admins')
-      .insert({ id: authUserId, email, role: 'super_admin' });
-
-    if (adminError) {
-      await supabaseAdmin.from('portal_accounts').delete().eq('id', authUserId);
-      await supabaseAdmin.auth.admin.deleteUser(authUserId);
-      throw new InternalServerErrorException('Failed to mirror super admin account.');
-    }
+    // Best-effort mirror — role is detected from portal_accounts, not super_admins
+    try {
+      await supabaseAdmin.from('super_admins').insert({ id: authUserId, email, role: 'super_admin' });
+    } catch (_) {}
 
     return {
       message: 'Account created successfully.',
@@ -93,6 +87,11 @@ export class AuthService {
         expires_in: data.session.expires_in,
       },
     };
+  }
+
+  async signOut(): Promise<{ message: string }> {
+    await supabase.auth.signOut();
+    return { message: 'Signed out successfully.' };
   }
 
   private async detectRole(email: string): Promise<string | null> {

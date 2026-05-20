@@ -55,6 +55,14 @@ export class InstitutionDataController {
     catch (e: any) { throw new HttpException(e.message, e.status ?? HttpStatus.INTERNAL_SERVER_ERROR); }
   }
 
+  // ─── Notifications ───────────────────────────────────────────────────────────
+
+  @Patch('notifications/read-all')
+  async markAllNotificationsRead(@Headers() headers: Record<string, string>) {
+    try { return await this.svc.markAllNotificationsRead(this.uid(headers)); }
+    catch (e: any) { throw new HttpException(e.message, e.status ?? HttpStatus.INTERNAL_SERVER_ERROR); }
+  }
+
   // ─── Dashboard ───────────────────────────────────────────────────────────────
 
   @Get('dashboard')
