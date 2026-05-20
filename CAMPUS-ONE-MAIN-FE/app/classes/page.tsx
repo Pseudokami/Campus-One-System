@@ -19,7 +19,6 @@ export default async function ClassesPage({ searchParams }: PageProps) {
         <SectionHeader
           title={activeSubtab ? `Classes / ${activeTitle}` : "Classes"}
           description=""
-          action="Add Class"
         />
         <SubtabPanel
           parent="Classes"

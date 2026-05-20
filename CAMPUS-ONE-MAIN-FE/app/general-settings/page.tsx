@@ -19,7 +19,6 @@ export default async function GeneralSettingsPage({ searchParams }: PageProps) {
         <SectionHeader
           title={activeSubtab ? `General Settings / ${activeTitle}` : "General Settings"}
           description=""
-          action="Update Settings"
         />
         <SubtabPanel
           parent="General Settings"

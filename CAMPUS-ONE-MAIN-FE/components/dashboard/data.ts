@@ -29,7 +29,6 @@ export const navItems: NavItem[] = [
       { label: "Accounts For Fees Invoice", tab: "accounts-fees-invoice" },
       { label: "Rules & Regulations", tab: "rules-regulations" },
       { label: "Marks Grading", tab: "marks-grading" },
-      { label: "Theme & Language", tab: "theme-language" },
       { label: "Account Settings", tab: "account-settings" },
     ],
   },
@@ -80,9 +79,10 @@ export const navItems: NavItem[] = [
     href: "/accounts",
     marker: "AC",
     children: [
-      { label: "Admin Users", tab: "admin-users" },
-      { label: "Permissions", tab: "permissions" },
-      { label: "Invitations", tab: "invitations" },
+      { label: "Chart Of Account", tab: "chart-of-account" },
+      { label: "Add Income", tab: "add-income" },
+      { label: "Add Expense", tab: "add-expense" },
+      { label: "Account Statement", tab: "account-statement" },
     ],
   },
   {

@@ -5,6 +5,7 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { StatCard } from "@/components/ui/StatCard";
 import { getSchoolForUser, readDb } from "@/lib/backend/store";
 import { cookies } from "next/headers";
+import Link from "next/link";
 
 function parseAmount(raw: string): number {
   return parseFloat(raw.replace(/[^0-9.]/g, "")) || 0;
@@ -31,7 +32,6 @@ export default async function DashboardPage() {
         <SectionHeader
           title="Dashboard"
           description="Welcome back."
-          action="Save Draft"
         />
 
         {/* KPI Grid */}
@@ -52,9 +52,9 @@ export default async function DashboardPage() {
               <p className="text-3xl font-bold tracking-tight leading-tight mb-4 text-gray-900">
                 {school.name ? `${school.name} onboarding is in progress.` : "Complete your school profile to get started."}
               </p>
-              <button className="mt-8 rounded-xl bg-[#F59E0B] px-6 py-3 text-sm font-semibold text-white shadow-lg hover:bg-[#D97706] transition-colors">
+              <Link href="/general-settings?tab=institute-profile" className="mt-8 inline-block rounded-xl bg-[#F59E0B] px-6 py-3 text-sm font-semibold text-white shadow-lg hover:bg-[#D97706] transition-colors">
                 Complete Profile
-              </button>
+              </Link>
             </div>
           </DashboardCard>
 

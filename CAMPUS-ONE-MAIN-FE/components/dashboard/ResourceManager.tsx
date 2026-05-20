@@ -189,7 +189,7 @@ export function ResourceManager({ config, activeSubtab }: ResourceManagerProps) 
 
           <div className="overflow-x-auto flex-1">
             <table className="w-full text-left text-[13px]">
-              <thead className="bg-gray-50 text-[11px] font-bold uppercase tracking-wider text-gray-500 border-b border-gray-200">
+              <thead className="bg-primary text-white text-[10px] font-black uppercase tracking-widest">
                 <tr>
                   {config.columns.map((column) => (
                     <th key={column} className="px-6 py-4">

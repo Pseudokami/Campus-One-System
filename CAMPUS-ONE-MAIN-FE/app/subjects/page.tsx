@@ -19,7 +19,6 @@ export default async function SubjectsPage({ searchParams }: PageProps) {
         <SectionHeader
           title={activeSubtab ? `Subjects / ${activeTitle}` : "Subjects"}
           description=""
-          action="Add Subject"
         />
         <SubtabPanel
           parent="Subjects"
