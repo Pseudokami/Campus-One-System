@@ -79,10 +79,9 @@ export const navItems: NavItem[] = [
     href: "/accounts",
     marker: "AC",
     children: [
-      { label: "Chart Of Account", tab: "chart-of-account" },
-      { label: "Add Income", tab: "add-income" },
-      { label: "Add Expense", tab: "add-expense" },
-      { label: "Account Statement", tab: "account-statement" },
+      { label: "Admin Users", tab: "admin-users" },
+      { label: "Permissions", tab: "permissions" },
+      { label: "Invitations", tab: "invitations" },
     ],
   },
   {

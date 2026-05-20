@@ -99,10 +99,9 @@ export const navigation: NavItem[] = [
     href: "/accounts",
     icon: Wallet,
     items: [
-      { title: "Chart Of Account", href: "/accounts?tab=chart-of-account" },
-      { title: "Add Income", href: "/accounts?tab=add-income" },
-      { title: "Add Expense", href: "/accounts?tab=add-expense" },
-      { title: "Account Statement", href: "/accounts?tab=account-statement" },
+      { title: "Admin Users", href: "/accounts?tab=admin-users" },
+      { title: "Permissions", href: "/accounts?tab=permissions" },
+      { title: "Invitations", href: "/accounts?tab=invitations" },
     ],
   },
   {

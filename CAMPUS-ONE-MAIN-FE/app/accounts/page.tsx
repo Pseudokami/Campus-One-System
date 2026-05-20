@@ -11,7 +11,7 @@ type PageProps = {
 export default async function AccountsPage({ searchParams }: PageProps) {
   const { tab } = await searchParams;
   const activeSubtab = getActiveChild("/accounts", tab);
-  const activeTitle = activeSubtab?.label ?? "Chart Of Account";
+  const activeTitle = activeSubtab?.label ?? "Admin Users";
 
   return (
     <AppLayout>
