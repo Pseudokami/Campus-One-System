@@ -2,7 +2,6 @@ import { getActiveChild } from "@/components/dashboard/data";
 import { ReferenceView } from "@/components/dashboard/ReferenceView";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import { SubtabPanel } from "@/components/ui/SubtabPanel";
 
 type PageProps = {
   searchParams: Promise<{ tab?: string | string[] }>;
@@ -18,11 +17,6 @@ export default async function SubjectsPage({ searchParams }: PageProps) {
       <div className="space-y-8">
         <SectionHeader
           title={activeSubtab ? `Subjects / ${activeTitle}` : "Subjects"}
-          description=""
-        />
-        <SubtabPanel
-          parent="Subjects"
-          active={activeTitle}
           description=""
         />
         <ReferenceView parent="Subjects" activeSubtab={activeTitle} />

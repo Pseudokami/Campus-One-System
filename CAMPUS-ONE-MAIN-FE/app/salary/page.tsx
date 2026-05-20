@@ -2,7 +2,6 @@ import { getActiveChild } from "@/components/dashboard/data";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { SalaryView } from "@/components/salary/SalaryView";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import { SubtabPanel } from "@/components/ui/SubtabPanel";
 
 type PageProps = {
   searchParams: Promise<{ tab?: string | string[] }>;
@@ -18,11 +17,6 @@ export default async function SalaryPage({ searchParams }: PageProps) {
       <div className="space-y-8">
         <SectionHeader
           title={activeSubtab ? `Salary / ${activeTitle}` : "Salary"}
-          description=""
-        />
-        <SubtabPanel
-          parent="Salary"
-          active={activeTitle}
           description=""
         />
         <SalaryView activeSubtab={activeTitle} />

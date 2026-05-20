@@ -2,7 +2,6 @@ import { getActiveChild } from "@/components/dashboard/data";
 import { ReferenceView } from "@/components/dashboard/ReferenceView";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import { SubtabPanel } from "@/components/ui/SubtabPanel";
 
 type PageProps = {
   searchParams: Promise<{ tab?: string | string[] }>;
@@ -20,11 +19,6 @@ export default async function StudentsPage({ searchParams }: PageProps) {
           title={activeSubtab ? `Students / ${activeTitle}` : "Students"}
           description=""
           action={activeTitle === "Admission Letter" ? undefined : "Import Students"}
-        />
-        <SubtabPanel
-          parent="Students"
-          active={activeTitle}
-          description=""
         />
         <ReferenceView parent="Students" activeSubtab={activeTitle} />
       </div>

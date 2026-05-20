@@ -19,7 +19,7 @@ export function Sidebar({ className }: SidebarProps) {
   const [userEmail, setUserEmail] = useState<string>("");
 
   useEffect(() => {
-    fetch("/api/auth/me")
+    fetch("/api/auth/me", { credentials: "same-origin" })
       .then((r) => r.json())
       .then((data) => {
         if (data?.email) setUserEmail(data.email);
