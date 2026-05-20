@@ -101,8 +101,8 @@ export function ResourceManager({ config, activeSubtab }: ResourceManagerProps) 
   }
 
   return (
-    <section className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <section className="space-y-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
           { label: "Subtab", value: activeSubtab },
           { label: "Records", value: rows.length },
@@ -115,7 +115,7 @@ export function ResourceManager({ config, activeSubtab }: ResourceManagerProps) 
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.4fr] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.4fr] gap-8">
         <form className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm h-fit sticky top-32" onSubmit={handleSubmit}>
           <div>
             <h2 className="text-lg font-bold text-gray-900 tracking-tight">

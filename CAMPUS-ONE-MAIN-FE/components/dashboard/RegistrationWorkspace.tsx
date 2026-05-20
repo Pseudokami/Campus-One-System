@@ -673,7 +673,8 @@ function AccountSettingsView() {
   useEffect(() => {
     const saved = localStorage.getItem("account-settings");
     if (saved) {
-      setSettings(JSON.parse(saved));
+      const parsed = JSON.parse(saved);
+      setSettings({ ...parsed, currency: "PHP", symbol: "₱" });
     } else {
       setSettings({
         username: "admin_campus_one",
@@ -689,13 +690,6 @@ function AccountSettingsView() {
 
   const currencies = [
     { code: "PHP", symbol: "₱", label: "Philippine Peso (PHP)" },
-    { code: "USD", symbol: "$", label: "US Dollar (USD)" },
-    { code: "EUR", symbol: "€", label: "Euro (EUR)" },
-    { code: "JPY", symbol: "¥", label: "Japanese Yen (JPY)" },
-    { code: "GBP", symbol: "£", label: "British Pound (GBP)" },
-    { code: "AUD", symbol: "$", label: "Australian Dollar (AUD)" },
-    { code: "CAD", symbol: "$", label: "Canadian Dollar (CAD)" },
-    { code: "SGD", symbol: "S$", label: "Singapore Dollar (SGD)" }
   ];
 
   const timezones = [
@@ -807,17 +801,11 @@ function AccountSettingsView() {
                   <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-1">
                     Currency <span className="text-red-500">*</span>
                   </span>
-                  <select 
-                    required
-                    value={settings.currency}
-                    onChange={(e) => handleCurrencyChange(e.target.value)}
-                    className="mt-2 h-12 w-full rounded-xl border border-gray-200 bg-white px-5 text-sm text-gray-900 outline-none focus:border-[#F59E0B] transition-all font-bold"
-                  >
-                    <option value="">Select currency</option>
-                    {currencies.map(c => (
-                      <option key={c.code} value={c.code}>{c.label}</option>
-                    ))}
-                  </select>
+                  <input
+                    readOnly
+                    value="Philippine Peso (PHP)"
+                    className="mt-2 h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-5 text-sm text-gray-900 outline-none cursor-default font-bold"
+                  />
                 </label>
                 <label className="block">
                   <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-1">
