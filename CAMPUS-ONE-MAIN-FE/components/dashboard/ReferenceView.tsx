@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, Users, BookOpen, AlertCircle, X, ChevronDown, Edit, Trash2, Eye, EyeOff, Save, Send, Printer, Search, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PrintTemplate, PrintTable, PrintThead, PrintTh, PrintTd, PrintInfoGrid, PrintSection } from "@/components/ui/PrintTemplate";
 
 // Circular Avatar illustration matching the user's screenshots exactly!
 export function DefaultAvatarSVG({ className = "w-24 h-24" }: { className?: string }) {
@@ -60,6 +62,7 @@ interface ReferenceViewProps {
 }
 
 export function ReferenceView({ parent, activeSubtab }: ReferenceViewProps) {
+  const router = useRouter();
   const [editingEmployee, setEditingEmployee] = useState<any | null>(null);
   const [selectedEmployeeForLetter, setSelectedEmployeeForLetter] = useState<any | null>(null);
   const [editingStudent, setEditingStudent] = useState<any | null>(null);
@@ -105,7 +108,10 @@ export function ReferenceView({ parent, activeSubtab }: ReferenceViewProps) {
       return (
         <AdmissionLetterView 
           selectedStudent={selectedStudentForLetter} 
-          onBack={() => setSelectedStudentForLetter(null)} 
+          onBack={() => {
+            setSelectedStudentForLetter(null);
+            router.push("/students?tab=all-students");
+          }} 
         />
       );
     }
@@ -113,7 +119,10 @@ export function ReferenceView({ parent, activeSubtab }: ReferenceViewProps) {
       return (
         <StudentIDCardsView 
           selectedStudent={selectedStudentForLetter} 
-          onBack={() => setSelectedStudentForLetter(null)} 
+          onBack={() => {
+            setSelectedStudentForLetter(null);
+            router.push("/students?tab=all-students");
+          }} 
         />
       );
     }
@@ -223,8 +232,8 @@ function AllStudentsGrid({ onEdit, onViewDetails }: { onEdit: (student: any) => 
 
     function loadDefaultMock() {
       const defaultStudents = [
-        { id: "S103", name: "Alex Johnson", level: "Class 3", status: "Enrolled" },
-        { id: "S104", name: "Sarah Williams", level: "Class 4", status: "Enrolled" }
+        { id: "S103", name: "Student One", level: "Class 3", status: "Enrolled" },
+        { id: "S104", name: "Student Two", level: "Class 4", status: "Enrolled" }
       ];
       setStudents(defaultStudents);
       localStorage.setItem("campus_one_students", JSON.stringify(defaultStudents));
@@ -252,7 +261,7 @@ function AllStudentsGrid({ onEdit, onViewDetails }: { onEdit: (student: any) => 
     <div className="space-y-6">
       <div className="flex justify-center items-center gap-4">
         <form onSubmit={handleSearch} className="relative w-full max-w-md">
-          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 bg-white px-2 relative z-10 -mb-2 w-fit">
+          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 px-2 relative z-10 -mb-2 w-fit">
             Search Student <span className="text-red-500">*</span>
           </label>
           <div className="relative">
@@ -316,7 +325,27 @@ function AllStudentsGrid({ onEdit, onViewDetails }: { onEdit: (student: any) => 
   );
 }
 
+function SuccessToast({ message, onClose }: { message: string; onClose: () => void }) {
+  return (
+    <div className="fixed right-6 top-6 z-50 flex min-w-[280px] max-w-xs items-start gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-xl animate-in fade-in slide-in-from-top-2 duration-300">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-100">
+        <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      <div className="flex-1 pt-0.5">
+        <p className="text-sm font-bold text-green-600">Success!</p>
+        <p className="mt-0.5 text-xs text-gray-500">{message}</p>
+      </div>
+      <button onClick={onClose} className="shrink-0 rounded-lg p-1 text-gray-400 transition hover:bg-gray-100" type="button">
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
 function EditStudentForm({ student, onCancel }: { student: any; onCancel: () => void }) {
+  const [isSuccess, setIsSuccess] = useState(false);
   const [name, setName] = useState(student.name || "");
   const [level, setLevel] = useState(student.level || "Class 1");
   const [rollNo, setRollNo] = useState(student.rollNo || "");
@@ -344,7 +373,7 @@ function EditStudentForm({ student, onCancel }: { student: any; onCancel: () => 
 
   const [presentAddress, setPresentAddress] = useState(student.presentAddress || "");
   const [permanentAddress, setPermanentAddress] = useState(student.permanentAddress || "");
-  const [orphan, setOrphan] = useState(student.orphan || "No");
+  const [orphan, setOrphan] = useState(student.orphan || "");
   const [discount, setDiscount] = useState(student.discount || "");
 
   const [identificationMark, setIdentificationMark] = useState(student.identificationMark || "");
@@ -436,11 +465,13 @@ function EditStudentForm({ student, onCancel }: { student: any; onCancel: () => 
     });
 
     localStorage.setItem("campus_one_students", JSON.stringify(updatedStudents));
-    onCancel(); // return to grid
+    setIsSuccess(true);
+    setTimeout(() => { setIsSuccess(false); onCancel(); }, 2000);
   };
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-20 no-print">
+      {isSuccess && <SuccessToast message="Student record updated successfully." onClose={() => setIsSuccess(false)} />}
       {/* Breadcrumbs matching Image 2 */}
       <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-widest border-b border-gray-100 pb-3">
         <span>Students</span>
@@ -605,31 +636,31 @@ function EditStudentForm({ student, onCancel }: { student: any; onCancel: () => 
               <h4 className="text-sm font-bold text-amber-900">Father's Details</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father Name <span className="text-red-500">*</span></label>
-                  <input required type="text" value={fatherName} onChange={(e) => setFatherName(e.target.value)} placeholder="Father Name" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father's Name <span className="text-red-500">*</span></label>
+                  <input required type="text" value={fatherName} onChange={(e) => setFatherName(e.target.value)} placeholder="Father's Name" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father Mobile <span className="text-red-500">*</span></label>
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father's Mobile <span className="text-red-500">*</span></label>
                   <input required type="text" value={fatherMobile} onChange={(e) => setFatherMobile(e.target.value.replace(/[^0-9]/g, ''))} placeholder="e.g. +639xxxxxxxx" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father CNIC / NIC</label>
-                  <input type="text" value={fatherCnic} onChange={(e) => setFatherCnic(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Father CNIC / NIC" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father's CNIC / NIC</label>
+                  <input type="text" value={fatherCnic} onChange={(e) => setFatherCnic(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Father's CNIC / NIC" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father Occupation</label>
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father's Occupation</label>
                   <input type="text" value={fatherOccupation} onChange={(e) => setFatherOccupation(e.target.value)} placeholder="e.g. Engineer" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father Education</label>
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father's Education</label>
                   <input type="text" value={fatherEducation} onChange={(e) => setFatherEducation(e.target.value)} placeholder="e.g. Bachelors" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father Profession</label>
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father's Profession</label>
                   <input type="text" value={fatherProfession} onChange={(e) => setFatherProfession(e.target.value)} placeholder="e.g. IT Specialist" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father Income</label>
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father's Income</label>
                   <input type="text" value={fatherIncome} onChange={(e) => setFatherIncome(e.target.value)} placeholder="e.g. 50000" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
               </div>
@@ -640,32 +671,32 @@ function EditStudentForm({ student, onCancel }: { student: any; onCancel: () => 
               <h4 className="text-sm font-bold text-amber-900">Mother's Details</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother Name</label>
-                  <input type="text" value={motherName} onChange={(e) => setMotherName(e.target.value)} placeholder="Mother Name" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother's Name<span className="text-red-500"> *</span></label>
+                  <input required type="text" value={motherName} onChange={(e) => setMotherName(e.target.value)} placeholder="Mother's Name" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother Mobile</label>
-                  <input type="text" value={motherMobile} onChange={(e) => setMotherMobile(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Mother Mobile" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother's Mobile<span className="text-red-500"> *</span></label>
+                  <input required type="text" value={motherMobile} onChange={(e) => setMotherMobile(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Mother's Mobile" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother CNIC / NIC</label>
-                  <input type="text" value={motherCnic} onChange={(e) => setMotherCnic(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Mother CNIC / NIC" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother's CNIC / NIC</label>
+                  <input type="text" value={motherCnic} onChange={(e) => setMotherCnic(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Mother's CNIC / NIC" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother Occupation</label>
-                  <input type="text" value={motherOccupation} onChange={(e) => setMotherOccupation(e.target.value)} placeholder="Mother Occupation" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother's Occupation</label>
+                  <input type="text" value={motherOccupation} onChange={(e) => setMotherOccupation(e.target.value)} placeholder="Mother's Occupation" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother Education</label>
-                  <input type="text" value={motherEducation} onChange={(e) => setMotherEducation(e.target.value)} placeholder="Mother Education" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother's Education</label>
+                  <input type="text" value={motherEducation} onChange={(e) => setMotherEducation(e.target.value)} placeholder="Mother's Education" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother Profession</label>
-                  <input type="text" value={motherProfession} onChange={(e) => setMotherProfession(e.target.value)} placeholder="Mother Profession" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother's Profession</label>
+                  <input type="text" value={motherProfession} onChange={(e) => setMotherProfession(e.target.value)} placeholder="Mother's Profession" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother Income</label>
-                  <input type="text" value={motherIncome} onChange={(e) => setMotherIncome(e.target.value)} placeholder="Mother Income" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother's Income</label>
+                  <input type="text" value={motherIncome} onChange={(e) => setMotherIncome(e.target.value)} placeholder="Mother's Income" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
               </div>
             </div>
@@ -703,7 +734,8 @@ function EditStudentForm({ student, onCancel }: { student: any; onCancel: () => 
               </div>
               <div className="space-y-1">
                 <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Orphan Student <span className="text-red-500">*</span></label>
-                <select required value={orphan} onChange={(e) => setOrphan(e.target.value)} className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65rem_auto] bg-[right_1.25rem_center] bg-no-repeat pr-10">
+                <select required value={orphan} onChange={(e) => setOrphan(e.target.value)} className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65rem_auto] bg-[right_1.25rem_center] bg-no-repeat pr-10" style={{color: !orphan ? "#9ca3af" : ""}}>
+                  <option value="" disabled>Select Orphan Status</option>
                   <option value="No">No</option>
                   <option value="Yes">Yes</option>
                 </select>
@@ -773,7 +805,7 @@ function AdmissionForm() {
   
   const [presentAddress, setPresentAddress] = useState("");
   const [permanentAddress, setPermanentAddress] = useState("");
-  const [orphan, setOrphan] = useState("No");
+  const [orphan, setOrphan] = useState("");
   const [discount, setDiscount] = useState("");
   const [image, setImage] = useState("");
 
@@ -858,7 +890,7 @@ function AdmissionForm() {
     
     setPresentAddress("");
     setPermanentAddress("");
-    setOrphan("No");
+    setOrphan("");
     setDiscount("");
     setImage("");
 
@@ -966,23 +998,7 @@ function AdmissionForm() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-20">
-      {isSuccess && (
-        <div className="rounded-xl overflow-hidden border border-green-500/20 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="bg-green-500 px-4 py-2 flex items-center justify-between">
-            <span className="text-[11px] font-black text-white uppercase tracking-tighter">Campus One</span>
-            <button type="button" onClick={() => setIsSuccess(false)} className="text-white hover:bg-green-600 rounded-md p-1 transition-colors">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          <div className="bg-white p-6 flex flex-col items-center text-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>
-            </div>
-            <h3 className="text-lg font-bold text-gray-900">Admission Submitted!</h3>
-            <p className="text-sm text-gray-500 font-medium">Student has been successfully admitted.</p>
-          </div>
-        </div>
-      )}
+      {isSuccess && <SuccessToast message="Student has been successfully admitted." onClose={() => setIsSuccess(false)} />}
 
       {showAlert && classCount === 0 && (
         <div className="rounded-xl overflow-hidden border border-primary/20 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
@@ -1076,13 +1092,14 @@ function AdmissionForm() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Select Class <span className="text-red-500">*</span></label>
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Class <span className="text-red-500">*</span></label>
                   <select 
                     required 
                     value={level} 
                     onChange={(e) => setLevel(e.target.value)}
-                    className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65rem_auto] bg-[right_1.25rem_center] bg-no-repeat pr-10"
+                    className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-500 focus:border-[#F59E0B] outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65rem_auto] bg-[right_1.25rem_center] bg-no-repeat pr-10"
                   >
+                    <option value="Class 1">Select Class</option>
                     <option value="Class 1">Class 1</option>
                     <option value="Class 2">Class 2</option>
                     <option value="Class 3">Class 3</option>
@@ -1099,7 +1116,7 @@ function AdmissionForm() {
                     required 
                     value={gender} 
                     onChange={(e) => setGender(e.target.value)}
-                    className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65rem_auto] bg-[right_1.25rem_center] bg-no-repeat pr-10"
+                    className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-500 focus:border-[#F59E0B] outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65rem_auto] bg-[right_1.25rem_center] bg-no-repeat pr-10"
                   >
                     <option value="">Select Gender</option>
                     <option value="Male">Male</option>
@@ -1114,7 +1131,7 @@ function AdmissionForm() {
                     type="date" 
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
-                    className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" 
+                    className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-500 focus:border-[#F59E0B] outline-none transition-all" 
                   />
                 </div>
                 <div className="space-y-1">
@@ -1195,31 +1212,31 @@ function AdmissionForm() {
               <h4 className="text-sm font-bold text-amber-900">Father's Details</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father Name <span className="text-red-500">*</span></label>
-                  <input required type="text" value={fatherName} onChange={(e) => setFatherName(e.target.value)} placeholder="Father Name" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father's Name <span className="text-red-500">*</span></label>
+                  <input required type="text" value={fatherName} onChange={(e) => setFatherName(e.target.value)} placeholder="Father's Name" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father Mobile <span className="text-red-500">*</span></label>
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father's Mobile <span className="text-red-500">*</span></label>
                   <input required type="text" value={fatherMobile} onChange={(e) => setFatherMobile(e.target.value.replace(/[^0-9]/g, ''))} placeholder="e.g. +639xxxxxxxx" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father CNIC / NIC</label>
-                  <input type="text" value={fatherCnic} onChange={(e) => setFatherCnic(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Father CNIC / NIC" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father's CNIC / NIC</label>
+                  <input type="text" value={fatherCnic} onChange={(e) => setFatherCnic(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Father's CNIC / NIC" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father Occupation</label>
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father's Occupation</label>
                   <input type="text" value={fatherOccupation} onChange={(e) => setFatherOccupation(e.target.value)} placeholder="e.g. Engineer" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father Education</label>
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father's Education</label>
                   <input type="text" value={fatherEducation} onChange={(e) => setFatherEducation(e.target.value)} placeholder="e.g. Bachelors" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father Profession</label>
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father's Profession</label>
                   <input type="text" value={fatherProfession} onChange={(e) => setFatherProfession(e.target.value)} placeholder="e.g. IT Specialist" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father Income</label>
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Father's Income</label>
                   <input type="text" value={fatherIncome} onChange={(e) => setFatherIncome(e.target.value)} placeholder="e.g. 50000" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
               </div>
@@ -1230,32 +1247,32 @@ function AdmissionForm() {
               <h4 className="text-sm font-bold text-amber-900">Mother's Details</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother Name</label>
-                  <input type="text" value={motherName} onChange={(e) => setMotherName(e.target.value)} placeholder="Mother Name" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother's Name<span className="text-red-500"> *</span></label>
+                  <input required type="text" value={motherName} onChange={(e) => setMotherName(e.target.value)} placeholder="Mother's Name" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother Mobile</label>
-                  <input type="text" value={motherMobile} onChange={(e) => setMotherMobile(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Mother Mobile" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother's Mobile<span className="text-red-500"> *</span></label>
+                  <input required type="text" value={motherMobile} onChange={(e) => setMotherMobile(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Mother's Mobile" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother CNIC / NIC</label>
-                  <input type="text" value={motherCnic} onChange={(e) => setMotherCnic(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Mother CNIC / NIC" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother's CNIC / NIC</label>
+                  <input type="text" value={motherCnic} onChange={(e) => setMotherCnic(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Mother's CNIC / NIC" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother Occupation</label>
-                  <input type="text" value={motherOccupation} onChange={(e) => setMotherOccupation(e.target.value)} placeholder="Mother Occupation" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother's Occupation</label>
+                  <input type="text" value={motherOccupation} onChange={(e) => setMotherOccupation(e.target.value)} placeholder="Mother's Occupation" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother Education</label>
-                  <input type="text" value={motherEducation} onChange={(e) => setMotherEducation(e.target.value)} placeholder="Mother Education" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother's Education</label>
+                  <input type="text" value={motherEducation} onChange={(e) => setMotherEducation(e.target.value)} placeholder="Mother's Education" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother Profession</label>
-                  <input type="text" value={motherProfession} onChange={(e) => setMotherProfession(e.target.value)} placeholder="Mother Profession" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother's Profession</label>
+                  <input type="text" value={motherProfession} onChange={(e) => setMotherProfession(e.target.value)} placeholder="Mother's Profession" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother Income</label>
-                  <input type="text" value={motherIncome} onChange={(e) => setMotherIncome(e.target.value)} placeholder="Mother Income" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Mother's Income</label>
+                  <input type="text" value={motherIncome} onChange={(e) => setMotherIncome(e.target.value)} placeholder="Mother's Income" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
                 </div>
               </div>
             </div>
@@ -1293,7 +1310,8 @@ function AdmissionForm() {
               </div>
               <div className="space-y-1">
                 <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">Orphan Student <span className="text-red-500">*</span></label>
-                <select required value={orphan} onChange={(e) => setOrphan(e.target.value)} className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65rem_auto] bg-[right_1.25rem_center] bg-no-repeat pr-10">
+                <select required value={orphan} onChange={(e) => setOrphan(e.target.value)} className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65rem_auto] bg-[right_1.25rem_center] bg-no-repeat pr-10" style={{color: !orphan ? "#9ca3af" : ""}}>
+                  <option value="" disabled>Select Orphan Status</option>
                   <option value="No">No</option>
                   <option value="Yes">Yes</option>
                 </select>
@@ -1364,8 +1382,8 @@ function AdmissionLetterView({ selectedStudent, onBack }: { selectedStudent?: an
 
     if (list.length === 0) {
       list = [
-        { id: "S103", name: "Alex Johnson", level: "Class 3", status: "Enrolled", dob: "2010-05-12" },
-        { id: "S104", name: "Sarah Williams", level: "Class 4", status: "Enrolled", dob: "2011-08-22" }
+        { id: "S103", name: "Student One", level: "Class 3", status: "Enrolled", dob: "2010-05-12" },
+        { id: "S104", name: "Student Two", level: "Class 4", status: "Enrolled", dob: "2011-08-22" }
       ];
     }
     setAllStudents(list);
@@ -1373,9 +1391,6 @@ function AdmissionLetterView({ selectedStudent, onBack }: { selectedStudent?: an
     if (selectedStudent) {
       setStudentLetter(selectedStudent);
       setSearchQuery(selectedStudent.name);
-    } else if (list.length > 0) {
-      setStudentLetter(list[0]);
-      setSearchQuery(list[0].name);
     }
   }, [selectedStudent]);
 
@@ -1403,7 +1418,7 @@ function AdmissionLetterView({ selectedStudent, onBack }: { selectedStudent?: an
 
       <div className="rounded-2xl border border-gray-200 bg-white p-8 flex flex-col items-center justify-center gap-6 shadow-sm no-print">
         <div className="relative w-full max-w-md">
-          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-4 bg-white px-2 relative z-10 -mb-2 w-fit block">Search Student*</label>
+          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-4 bg-white px-2 relative z-10 -mb-2 w-fit block">Search Student<span className="text-red-500">*</span></label>
           <input 
             type="text" 
             value={searchQuery}
@@ -1467,11 +1482,11 @@ function AdmissionLetterView({ selectedStudent, onBack }: { selectedStudent?: an
                   <span className="font-bold text-gray-900">{studentLetter.dob || new Date().toLocaleDateString()}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-gray-200/50">
-                  <span className="text-gray-500 font-semibold">Father Name</span>
+                  <span className="text-gray-500 font-semibold">Father's Name</span>
                   <span className="font-bold text-gray-900">{studentLetter.fatherName || "—"}</span>
                 </div>
                 <div className="flex justify-between py-2">
-                  <span className="text-gray-500 font-semibold">Father Mobile</span>
+                  <span className="text-gray-500 font-semibold">Father's Mobile</span>
                   <span className="font-bold text-gray-900 font-mono">{studentLetter.fatherMobile || "—"}</span>
                 </div>
               </div>
@@ -1486,226 +1501,97 @@ function AdmissionLetterView({ selectedStudent, onBack }: { selectedStudent?: an
             </div>
           </div>
 
-          {/* Printable letter block matching the formal template precisely */}
-          <div className="print-only-container hidden print:block bg-white text-black p-12 font-sans w-[800px] mx-auto text-left">
-            <style dangerouslySetInnerHTML={{__html: `
-              @media print {
-                /* Hide everything else on the page */
-                body * {
-                  visibility: hidden !important;
-                }
-                /* Show ONLY the admission letter container and its kids */
-                .print-only-container, .print-only-container * {
-                  visibility: visible !important;
-                }
-                .print-only-container {
-                  position: absolute !important;
-                  left: 0 !important;
-                  top: 0 !important;
-                  width: 100% !important;
-                  min-width: 100% !important;
-                  margin: 0 !important;
-                  padding: 30px !important;
-                  background: white !important;
-                  display: block !important;
-                }
-              }
-            `}} />
-
-            {/* Header branding block */}
-            <div className="flex flex-col items-center text-center border-b border-gray-300 pb-4">
-              <div className="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center border border-amber-100 shadow-sm mb-2">
-                <svg className="w-8 h-8 text-[#F59E0B]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/></svg>
-              </div>
-              <h1 className="text-3xl font-extrabold tracking-tight text-[#1F2937]">Campus One</h1>
-              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-0.5">" YOUR SCHOOL SOFTWARE "</p>
-              <p className="text-[9px] text-gray-400 font-semibold mt-1">+923460204447 | www.campusone.com | info@campusone.com</p>
-              <h2 className="text-2xl font-black text-[#F59E0B] tracking-wide uppercase mt-4 border-t-2 border-b-2 border-gray-200 py-1.5 w-full">Admission Letter</h2>
-            </div>
-
-            {/* Core details row with student avatar and fields */}
-            <div className="flex items-start gap-8 mt-6 border-b border-gray-200 pb-6">
-              <div className="w-32 h-32 rounded-full border-4 border-gray-100 overflow-hidden shadow-md flex items-center justify-center bg-gray-50 shrink-0">
+          {/* Printable letter block */}
+          <PrintTemplate title="Admission Letter">
+            {/* Student photo + core details */}
+            <div style={{ display: "flex", alignItems: "flex-start", gap: "32px", borderBottom: "1px solid #E5E7EB", paddingBottom: "20px" }}>
+              <div style={{ width: "110px", height: "110px", borderRadius: "50%", border: "4px solid #F3F4F6", overflow: "hidden", flexShrink: 0, background: "#F9FAFB", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <StudentAvatar student={studentLetter} className="w-full h-full object-cover" />
               </div>
-
-              <div className="grid grid-cols-3 gap-y-3.5 gap-x-6 flex-1 text-left">
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Serial No</span>
-                  <span className="text-xs font-black text-gray-900 mt-0.5">↳ 1,842,900</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Date Of Birth</span>
-                  <span className="text-xs font-black text-gray-900 mt-0.5">↳ {studentLetter.dob || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Date of Admission</span>
-                  <span className="text-xs font-black text-gray-900 mt-0.5">↳ {studentLetter.dob || new Date().toLocaleDateString()}</span>
-                </div>
-
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Registration No</span>
-                  <span className="text-xs font-black text-[#F59E0B] mt-0.5">↳ {studentLetter.id}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Student Birth Form ID / NIC</span>
-                  <span className="text-xs font-black text-gray-900 mt-0.5">↳ —</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Discount In Fee</span>
-                  <span className="text-xs font-black text-gray-900 mt-0.5">↳ 0 %</span>
-                </div>
-
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Student Name</span>
-                  <span className="text-xs font-black text-gray-900 mt-0.5">↳ {studentLetter.name}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Gender</span>
-                  <span className="text-xs font-black text-gray-900 mt-0.5">↳ {studentLetter.gender || "Male"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Admission Status</span>
-                  <span className="text-xs font-black text-gray-900 mt-0.5">↳ {studentLetter.status || "Enrolled"}</span>
-                </div>
-
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Class</span>
-                  <span className="text-xs font-black text-gray-900 mt-0.5">↳ {studentLetter.level || "Class 1"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Religion</span>
-                  <span className="text-xs font-black text-gray-900 mt-0.5">↳ {studentLetter.religion || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Mobile No</span>
-                  <span className="text-xs font-black text-gray-900 mt-0.5">↳ {studentLetter.phone || "—"}</span>
-                </div>
-              </div>
+              <PrintInfoGrid items={[
+                { label: "Serial No",                  value: "1,842,900" },
+                { label: "Date Of Birth",              value: studentLetter.dob },
+                { label: "Date of Admission",          value: studentLetter.dob || new Date().toLocaleDateString() },
+                { label: "Registration No",            value: studentLetter.id, highlight: true },
+                { label: "Student Birth Form ID / NIC",value: studentLetter.nic },
+                { label: "Discount In Fee",            value: studentLetter.discount ? `${studentLetter.discount}%` : "0%" },
+                { label: "Student Name",               value: studentLetter.name },
+                { label: "Gender",                     value: studentLetter.gender || "Male" },
+                { label: "Admission Status",           value: studentLetter.status || "Enrolled" },
+                { label: "Class",                      value: studentLetter.level || "Class 1" },
+                { label: "Religion",                   value: studentLetter.religion },
+                { label: "Mobile No",                  value: studentLetter.phone },
+              ]} />
             </div>
 
-            {/* Address bar */}
-            <div className="flex flex-col text-left mt-4 border-b border-gray-200 pb-4">
-              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Address</span>
-              <span className="text-xs font-black text-gray-900 mt-0.5">↳ {studentLetter.presentAddress || studentLetter.permanentAddress || "—"}</span>
-            </div>
+            {/* Address */}
+            <PrintSection>
+              <PrintInfoGrid columns={2} items={[
+                { label: "Address", value: studentLetter.presentAddress || studentLetter.permanentAddress },
+              ]} />
+            </PrintSection>
 
-            {/* Three Columns list matching template exactly */}
-            <div className="grid grid-cols-3 gap-6 mt-4 border-b border-gray-200 pb-6">
-              {/* Column 1 */}
-              <div className="space-y-3.5 text-left">
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Any Identification Mark?</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.identificationMark || "—"}</span>
+            {/* Extra details — 3 columns */}
+            <PrintSection title="Additional Details">
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "14px 24px" }}>
+                {/* Col 1 – Student extras */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {[
+                    ["Any Identification Mark?", studentLetter.identificationMark],
+                    ["Blood Group",              studentLetter.bloodGroup],
+                    ["Disease If Any?",          studentLetter.disease],
+                    ["Cast",                     studentLetter.cast],
+                    ["Orphan Student",           studentLetter.orphan],
+                    ["OSC",                      studentLetter.osc],
+                    ["Previous School",          studentLetter.previousSchool],
+                    ["Previous ID / Board Roll No", studentLetter.previousBoardRollNo],
+                    ["Any Additional Note",      studentLetter.additionalNote],
+                  ].map(([label, val]) => (
+                    <div key={label as string} style={{ display: "flex", flexDirection: "column" }}>
+                      <span style={{ fontSize: "9px", fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</span>
+                      <span style={{ fontSize: "11px", fontWeight: 600, color: "#374151", marginTop: "2px" }}>↳ {val || "—"}</span>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Blood Group</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.bloodGroup || "—"}</span>
+                {/* Col 2 – Father */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {[
+                    ["Father's Name",    studentLetter.fatherName],
+                    ["Father National ID", studentLetter.fatherCnic],
+                    ["Education",        studentLetter.fatherEducation],
+                    ["Mobile No",        studentLetter.fatherMobile],
+                    ["Occupation",       studentLetter.fatherOccupation],
+                    ["Profession",       studentLetter.fatherProfession],
+                    ["Income",           studentLetter.fatherIncome || "0"],
+                    ["Total Siblings",   studentLetter.totalSiblings || "0"],
+                    ["Family",           studentLetter.family],
+                  ].map(([label, val]) => (
+                    <div key={label as string} style={{ display: "flex", flexDirection: "column" }}>
+                      <span style={{ fontSize: "9px", fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</span>
+                      <span style={{ fontSize: "11px", fontWeight: 600, color: "#374151", marginTop: "2px" }}>↳ {val || "—"}</span>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Disease If Any?</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.disease || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Cast</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.cast || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Orphan Student</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.orphan || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">OSC</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.osc || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Previous School</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.previousSchool || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Previous ID / Board Roll No</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.previousBoardRollNo || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Any Additional Note</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.additionalNote || "—"}</span>
+                {/* Col 3 – Mother */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {[
+                    ["Mother's Name",    studentLetter.motherName],
+                    ["Mother National ID", studentLetter.motherCnic],
+                    ["Education",        studentLetter.motherEducation],
+                    ["Mobile No",        studentLetter.motherMobile],
+                    ["Occupation",       studentLetter.motherOccupation],
+                    ["Profession",       studentLetter.motherProfession],
+                    ["Income",           studentLetter.motherIncome || "0"],
+                  ].map(([label, val]) => (
+                    <div key={label as string} style={{ display: "flex", flexDirection: "column" }}>
+                      <span style={{ fontSize: "9px", fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</span>
+                      <span style={{ fontSize: "11px", fontWeight: 600, color: "#374151", marginTop: "2px" }}>↳ {val || "—"}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-
-              {/* Column 2 */}
-              <div className="space-y-3.5 text-left">
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Father Name</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.fatherName || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Father National ID</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.fatherCnic || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Education</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.fatherEducation || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Mobile No</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.fatherMobile || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Occupation</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.fatherOccupation || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Profession</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.fatherProfession || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Income</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.fatherIncome || "0"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Total Siblings</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.totalSiblings || "0"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Family</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.family || "—"}</span>
-                </div>
-              </div>
-
-              {/* Column 3 */}
-              <div className="space-y-3.5 text-left">
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Mother Name</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.motherName || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Mother National ID</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.motherCnic || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Education</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.motherEducation || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Mobile No</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.motherMobile || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Occupation</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.motherOccupation || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Profession</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.motherProfession || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Income</span>
-                  <span className="text-xs font-semibold text-gray-700 mt-0.5">↳ {studentLetter.motherIncome || "0"}</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
+            </PrintSection>
+          </PrintTemplate>
         </div>
       )}
     </div>
@@ -1740,8 +1626,8 @@ function StudentIDCardsView({ selectedStudent, onBack }: { selectedStudent?: any
 
     if (list.length === 0) {
       list = [
-        { id: "S103", name: "Alex Johnson", level: "Class 3", status: "Enrolled", dob: "2010-05-12" },
-        { id: "S104", name: "Sarah Williams", level: "Class 4", status: "Enrolled", dob: "2011-08-22" }
+        { id: "S103", name: "Student One", level: "Class 3", status: "Enrolled", dob: "2010-05-12" },
+        { id: "S104", name: "Student Two", level: "Class 4", status: "Enrolled", dob: "2011-08-22" }
       ];
     }
     setAllStudents(list);
@@ -1749,9 +1635,6 @@ function StudentIDCardsView({ selectedStudent, onBack }: { selectedStudent?: any
     if (selectedStudent) {
       setTargetStudent(selectedStudent);
       setSearchQuery(selectedStudent.name);
-    } else if (list.length > 0) {
-      setTargetStudent(list[0]);
-      setSearchQuery(list[0].name);
     }
   }, [selectedStudent]);
 
@@ -1760,8 +1643,6 @@ function StudentIDCardsView({ selectedStudent, onBack }: { selectedStudent?: any
       return !searchQuery || stu.name.toLowerCase().includes(searchQuery.toLowerCase()) || stu.id.toLowerCase().includes(searchQuery.toLowerCase());
     });
   }, [allStudents, searchQuery]);
-
-  if (!targetStudent) return null;
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-10">
@@ -1802,7 +1683,7 @@ function StudentIDCardsView({ selectedStudent, onBack }: { selectedStudent?: any
         <div className="flex flex-wrap items-center gap-4">
           {/* Search Student* field */}
           <div className="relative">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 bg-white px-2 relative z-10 -mb-2 w-fit block">Search Student*</label>
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 bg-white px-2 relative z-10 -mb-2 w-fit block">Search Student<span className="text-red-500">*</span></label>
             <input 
               type="text" 
               value={searchQuery}
@@ -1839,6 +1720,13 @@ function StudentIDCardsView({ selectedStudent, onBack }: { selectedStudent?: any
       </div>
 
       <div className="rounded-2xl border border-gray-200 bg-gray-50/50 p-12 flex flex-col items-center justify-center text-center gap-6 min-h-[520px] relative overflow-hidden no-print">
+        {!targetStudent ? (
+          <div className="flex flex-col items-center justify-center gap-4">
+            <svg className="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <p className="text-gray-500 font-medium">Search for a student to generate their ID card</p>
+          </div>
+        ) : (
+        <>
         {/* Animated preview window */}
         <div className="animate-in fade-in zoom-in-95 duration-300 flex flex-col items-center">
           {/* Main ID Card frame */}
@@ -1941,9 +1829,12 @@ function StudentIDCardsView({ selectedStudent, onBack }: { selectedStudent?: any
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
           Print ID Card
         </button>
+        </>
+        )}
       </div>
 
       {/* Printable ID card wrapper */}
+      {targetStudent && (
       <div className="print-only-container hidden print:block bg-white text-black p-10 font-sans leading-relaxed text-sm">
         <div className="flex flex-col items-center justify-center min-h-screen">
           <div className="w-[340px] h-[520px] rounded-[2.5rem] border border-gray-400 bg-white overflow-hidden shadow-none flex flex-col relative">
@@ -1994,13 +1885,15 @@ function StudentIDCardsView({ selectedStudent, onBack }: { selectedStudent?: any
             <div className="absolute bottom-4 right-4 w-12 h-12 bg-white border border-gray-200 rounded-lg p-1 shadow-sm flex items-center justify-center">
               <svg className="w-full h-full text-gray-900" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 3h6v6H3V3zm12 0h6v6h-6V3zM3 15h6v6H3v-6zm12 3v3h6v-3h-6zm4-3v3h2v-3h-2z"/><rect x="7" y="7" width="2" height="2" fill="currentColor"/><rect x="15" y="7" width="2" height="2" fill="currentColor"/><rect x="7" y="15" width="2" height="2" fill="currentColor"/><rect x="17" y="17" width="2" height="2" fill="currentColor"/></svg>
             </div>
+          </div>
         </div>
       </div>
+      )}
     </div>
-  </div>
   );
 }
-  function PrintBasicListView() {
+
+function PrintBasicListView() {
   const [selectedClass, setSelectedClass] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -2208,17 +2101,18 @@ function StudentIDCardsView({ selectedStudent, onBack }: { selectedStudent?: any
                 </div>
               </div>
 
-              <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm">
-                <table className="w-full text-left text-[13px]">
-                  <thead className="bg-primary text-white text-[10px] font-black uppercase tracking-widest">
+              <div className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-[11px]">
+                  <thead className="bg-primary text-white text-[9px] font-black uppercase tracking-widest">
                     <tr>
-                      <th className="px-6 py-4">Sr</th>
-                      <th className="px-6 py-4">ID</th>
-                      <th className="px-6 py-4">Student Name</th>
-                      <th className="px-6 py-4">Father</th>
-                      <th className="px-6 py-4">Class</th>
-                      <th className="px-6 py-4">Fee Remainings</th>
-                      <th className="px-6 py-4">Phone</th>
+                      <th className="px-3 py-2">Sr</th>
+                      <th className="px-3 py-2">ID</th>
+                      <th className="px-3 py-2">Student Name</th>
+                      <th className="px-3 py-2">Father</th>
+                      <th className="px-3 py-2">Class</th>
+                      <th className="px-3 py-2">Fee Remainings</th>
+                      <th className="px-3 py-2">Phone</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
@@ -2231,20 +2125,21 @@ function StudentIDCardsView({ selectedStudent, onBack }: { selectedStudent?: any
                     ) : (
                       paginatedStudents.map((student: any, i: number) => (
                         <tr key={student.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 font-mono text-gray-500">{(currentPage - 1) * itemsPerPage + i + 1}</td>
-                          <td className="px-6 py-4 font-bold text-gray-900">{student.id}</td>
-                          <td className="px-6 py-4 font-semibold text-gray-700">{student.name}</td>
-                          <td className="px-6 py-4 text-gray-600">{student.fatherName || "N/A"}</td>
-                          <td className="px-6 py-4">
-                            <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">{student.level || "Class 1"}</span>
+                          <td className="px-3 py-2 font-mono text-gray-500 text-[10px]">{(currentPage - 1) * itemsPerPage + i + 1}</td>
+                          <td className="px-3 py-2 font-bold text-gray-900 text-[10px]">{student.id}</td>
+                          <td className="px-3 py-2 font-semibold text-gray-700 text-[10px]">{student.name}</td>
+                          <td className="px-3 py-2 text-gray-600 text-[10px]">{student.fatherName || "N/A"}</td>
+                          <td className="px-3 py-2">
+                            <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest">{student.level || "Class 1"}</span>
                           </td>
-                          <td className="px-6 py-4 font-bold text-red-500">{formatFee(student.fee)}</td>
-                          <td className="px-6 py-4 text-gray-500 font-mono">{student.fatherMobile || "N/A"}</td>
+                          <td className="px-3 py-2 font-bold text-red-500 text-[10px]">{formatFee(student.fee)}</td>
+                          <td className="px-3 py-2 text-gray-500 font-mono text-[10px]">{student.fatherMobile || "N/A"}</td>
                         </tr>
                       ))
                     )}
                   </tbody>
                 </table>
+                </div>
               </div>
               <div className="flex items-center justify-between text-xs font-medium text-gray-500 px-2">
                 <span>Showing {filteredStudents.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to {Math.min(currentPage * itemsPerPage, filteredStudents.length)} of {filteredStudents.length} entries</span>
@@ -2272,40 +2167,34 @@ function StudentIDCardsView({ selectedStudent, onBack }: { selectedStudent?: any
 
       {/* Print ledger sheet */}
       {isSuccess && (
-        <div className="print-only-container hidden print:block bg-white text-black p-10 font-sans">
-          <div className="text-center pb-6 mb-8 border-b border-gray-300">
-            <h1 className="text-2xl font-black uppercase tracking-widest text-amber-900">Campus One</h1>
-            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mt-1">Class Attendance & Ledger - Class {selectedClass}</p>
-            <p className="text-[9px] text-gray-400 mt-2">Generated On: {new Date().toLocaleDateString()}</p>
-          </div>
-
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-gray-400 bg-gray-50 text-[10px] font-black uppercase tracking-widest text-gray-700">
-                <th className="py-3 px-2">Sr</th>
-                <th className="py-3 px-2">Student ID</th>
-                <th className="py-3 px-2">Student Name</th>
-                <th className="py-3 px-2">Father Name</th>
-                <th className="py-3 px-2">Class</th>
-                <th className="py-3 px-2">Fee Remaining</th>
-                <th className="py-3 px-2">Phone</th>
+        <PrintTemplate title="Student Basic List" subtitle={`Class: ${selectedClass}`}>
+          <PrintTable>
+            <PrintThead>
+              <tr>
+                <PrintTh>Sr</PrintTh>
+                <PrintTh>Student ID</PrintTh>
+                <PrintTh>Student Name</PrintTh>
+                <PrintTh>Father&apos;s Name</PrintTh>
+                <PrintTh>Class</PrintTh>
+                <PrintTh>Fee Remaining</PrintTh>
+                <PrintTh>Phone</PrintTh>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
+            </PrintThead>
+            <tbody>
               {filteredStudents.map((s: any, i: number) => (
-                <tr key={s.id} className="text-xs">
-                  <td className="py-3 px-2 font-mono text-gray-500">{i + 1}</td>
-                  <td className="py-3 px-2 font-bold text-gray-900">{s.id}</td>
-                  <td className="py-3 px-2 font-semibold text-gray-800">{s.name}</td>
-                  <td className="py-3 px-2 text-gray-600">{s.fatherName || "N/A"}</td>
-                  <td className="py-3 px-2">{s.level || "Class 1"}</td>
-                  <td className="py-3 px-2 font-bold text-red-600">{formatFee(s.fee)}</td>
-                  <td className="py-3 px-2 font-mono text-gray-500">{s.fatherMobile || "N/A"}</td>
+                <tr key={s.id}>
+                  <PrintTd variant="muted">{i + 1}</PrintTd>
+                  <PrintTd variant="bold">{s.id}</PrintTd>
+                  <PrintTd variant="bold">{s.name}</PrintTd>
+                  <PrintTd>{s.fatherName || "N/A"}</PrintTd>
+                  <PrintTd>{s.level || "Class 1"}</PrintTd>
+                  <PrintTd variant="red">{formatFee(s.fee)}</PrintTd>
+                  <PrintTd variant="muted">{s.fatherMobile || "N/A"}</PrintTd>
                 </tr>
               ))}
             </tbody>
-          </table>
-        </div>
+          </PrintTable>
+        </PrintTemplate>
       )}
     </div>
   );
@@ -2770,15 +2659,60 @@ function ManageLoginView() {
     triggerNotification("Success: Credentials exported to Excel spreadsheet successfully!");
   };
 
+  const buildLoginPrintHTML = (clonedTable: HTMLTableElement, tabTitle: string) => {
+    clonedTable.querySelectorAll('.no-print').forEach(el => el.remove());
+    clonedTable.querySelectorAll('span svg').forEach(icon => {
+      const span = icon.parentElement;
+      if (span) span.remove();
+    });
+    const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    return `<html><head><title>${tabTitle}</title><style>
+body { font-family: Inter, sans-serif; margin: 40px; color: #111827; }
+.doc-header { text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #E5E7EB; }
+.doc-header h1 { margin: 0; font-size: 26px; font-weight: 900; color: #1F2937; letter-spacing: -0.5px; }
+.doc-header .tagline { margin: 3px 0 0; font-size: 8px; font-weight: 800; color: #6B7280; text-transform: uppercase; letter-spacing: 3px; }
+.doc-header h2 { margin: 12px 0 0; font-size: 18px; font-weight: 900; color: #F59E0B; text-transform: uppercase; letter-spacing: 2px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.doc-header .gen-date { margin: 4px 0 0; font-size: 8px; color: #9CA3AF; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th, td { border: 1px solid #FCD34D; padding: 10px 12px; text-align: left; }
+th { background-color: #F59E0B; color: white; font-weight: 800; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+tr:nth-child(even) td { background-color: #FFFBEB; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+tr:nth-child(odd) td { background-color: white; }
+input { border: none; background: transparent; font-size: 12px; font-family: inherit; width: 100%; }
+@page { size: A4; margin: 0.6in; }
+</style></head><body>
+<div class="doc-header">
+  <h1>Campus One</h1>
+  <p class="tagline">Your School Software</p>
+  <h2>${tabTitle}</h2>
+  <p class="gen-date">Generated On: ${date}</p>
+</div>
+${clonedTable.outerHTML}
+</body></html>`;
+  };
+
   const handlePrintTable = () => {
-    window.print();
+    const tableElement = document.querySelector('table');
+    if (tableElement) {
+      const clonedTable = tableElement.cloneNode(true) as HTMLTableElement;
+      const printWindow = window.open('', '', 'height=600,width=1000');
+      if (!printWindow) return;
+      printWindow.document.write(buildLoginPrintHTML(clonedTable, 'Student Login Credentials'));
+      printWindow.document.close();
+      printWindow.print();
+    }
   };
 
   const handleExportPDF = () => {
-    triggerNotification("Tip: Please set your printer destination to 'Save as PDF' in the print dialogue to save your credentials sheet!");
-    setTimeout(() => {
-      window.print();
-    }, 500);
+    const tableElement = document.querySelector('table');
+    if (tableElement) {
+      const clonedTable = tableElement.cloneNode(true) as HTMLTableElement;
+      const printWindow = window.open('', '', 'height=600,width=1000');
+      if (!printWindow) return;
+      printWindow.document.write(buildLoginPrintHTML(clonedTable, 'Student Login Credentials'));
+      printWindow.document.close();
+      printWindow.print();
+    }
   };
 
   const filteredList = students.filter(stud => {
@@ -2803,59 +2737,39 @@ function ManageLoginView() {
   }, [sidebarSearch, selectedClass, tableSearch]);
 
   return (
-    <div className="space-y-6 pb-10">
-      {notification && (
-        <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-4 flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-300 no-print">
-          <div className="flex items-center gap-3 text-green-700 text-sm">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>
-            <span className="font-bold">{notification}</span>
-          </div>
-          <button type="button" onClick={() => setNotification(null)} className="text-green-700 hover:bg-green-500/20 p-1.5 rounded-lg transition-colors">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+    <div className="space-y-8 pb-16">
+      {notification && <SuccessToast message={notification} onClose={() => setNotification(null)} />}
 
-      {/* Grid container matching Image 5 */}
-      <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_2.2fr] gap-6 items-start">
-        {/* Left Filter Card */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm space-y-8 no-print">
-          <div className="flex flex-col items-center text-center gap-2">
-            <div className="flex items-center gap-2 text-gray-900 font-black text-xl">
-              <Search className="w-5 h-5 text-primary" />
-              Search
-            </div>
-          </div>
-
-          <div className="space-y-6">
+      {/* Full width container */}
+      <div className="space-y-6">
+        {/* Search and Filter Bar */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm no-print">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 bg-white px-2 relative z-10 -mb-2 w-fit">Search Student*</label>
+              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 bg-white px-2 relative z-10 -mb-2 w-fit">Search Student <span className="text-red-500">*</span></label>
               <input 
                 type="text" 
                 value={sidebarSearch}
                 onChange={(e) => setSidebarSearch(e.target.value)}
                 placeholder="Search Student" 
-                className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all shadow-sm"
+                className="w-full h-10 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all shadow-sm"
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 bg-white px-2 relative z-10 -mb-2 w-fit">Select Class*</label>
-              <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65rem_auto] bg-[right_1.25rem_center] bg-no-repeat pr-10">
-                <option value="Select">Select Class</option>
+              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 bg-white px-2 relative z-10 -mb-2 w-fit">Select Class <span className="text-red-500">*</span></label>
+              <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} className="w-full h-10 rounded-xl border border-gray-200 bg-white px-4 text-sm focus:border-[#F59E0B] outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65rem_auto] bg-[right_1.25rem_center] bg-no-repeat pr-10" style={{ color: selectedClass === "Select" ? '#6b7280' : '#111827' }}>
+                <option value="Select" style={{ color: '#6b7280' }}>Select Class</option>
                 {classes.map(c => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>
             </div>
-            <div className="text-center pt-2">
-              <button onClick={handleReloadAll} className="text-primary hover:underline text-xs font-bold uppercase tracking-widest transition-all">or, Reload All</button>
-            </div>
           </div>
         </div>
 
-        {/* Right Data Table Panel */}
+        {/* Data Table Panel */}
         <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
-          <div className="p-8 space-y-6">
+          <div className="p-6 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-4 no-print">
               <div className="flex flex-wrap gap-2">
                 {["Excel", "PDF", "Print"].map(tool => (
@@ -2866,94 +2780,105 @@ function ManageLoginView() {
                       if (tool === "PDF") handleExportPDF();
                       if (tool === "Print") handlePrintTable();
                     }} 
-                    className="px-6 py-2.5 bg-gray-50 border border-gray-250 rounded-xl text-xs font-black uppercase tracking-widest text-gray-700 hover:bg-primary hover:text-white hover:border-primary transition-all flex items-center gap-2 shadow-sm"
+                    className="px-4 py-2 bg-gray-50 border border-gray-250 rounded-xl text-xs font-black uppercase tracking-widest text-gray-700 hover:bg-primary hover:text-white hover:border-primary transition-all flex items-center gap-2 shadow-sm"
                   >
+                    {tool === "Excel" && <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>}
+                    {tool === "PDF" && <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>}
                     {tool === "Print" && <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>}
                     {tool}
                   </button>
                 ))}
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">Search:</span>
-                <input 
-                  type="text" 
-                  value={tableSearch} 
-                  onChange={(e) => setTableSearch(e.target.value)} 
-                  placeholder="Search table..." 
-                  className="h-10 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all shadow-sm w-48" 
-                />
-              </div>
             </div>
 
-            <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm">
-              <table className="w-full text-left text-[13px]">
-                <thead className="bg-primary text-white text-[10px] font-black uppercase tracking-widest">
+            <div className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-[15px]">
+                <thead className="bg-primary text-white text-[13px] font-black uppercase tracking-widest">
                   <tr>
-                    <th className="px-6 py-4">ID</th>
-                    <th className="px-6 py-4">Student Name</th>
-                    <th className="px-6 py-4">Class</th>
-                    <th className="px-6 py-4">Username</th>
-                    <th className="px-6 py-4">Password</th>
-                    <th className="px-6 py-4 no-print">Actions</th>
+                    <th className="px-4 py-4 text-center">ID</th>
+                    <th className="px-4 py-4 text-center">Student Name</th>
+                    <th className="px-4 py-4 text-center">Class</th>
+                    <th className="px-4 py-4 text-center">Username</th>
+                    <th className="px-4 py-4 text-center">Password</th>
+                    <th className="px-4 py-4 text-center no-print">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 bg-white">
                   {filteredList.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-20 text-center text-gray-500/40 font-bold uppercase tracking-widest text-[11px] bg-gray-50/30">
+                      <td colSpan={6} className="px-4 py-16 text-center text-gray-500/40 font-bold uppercase tracking-widest text-[14px] bg-gray-50/30">
                         No students found
                       </td>
                     </tr>
                   ) : (
                     paginatedList.map(stud => (
-                      <tr key={stud.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 font-bold text-gray-900">{stud.id}</td>
-                        <td className="px-6 py-4 font-semibold text-gray-700">{stud.name}</td>
-                        <td className="px-6 py-4">
-                          <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">{stud.level || "Class 1"}</span>
+                      <tr key={stud.id} className="hover:bg-gray-50/40 transition-colors">
+                        <td className="px-4 py-4 font-bold text-gray-900 text-[12px] text-center">{stud.id}</td>
+                        <td className="px-4 py-4 font-semibold text-gray-700 text-[12px] text-center">{stud.name}</td>
+                        <td className="px-4 py-4 text-center">
+                          <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest">{stud.level || "Class 1"}</span>
                         </td>
-                        <td className="px-6 py-4">
-                          <input 
-                            type="text" 
-                            value={editableUsernames[stud.id] || ""} 
-                            onChange={(e) => setEditableUsernames({ ...editableUsernames, [stud.id]: e.target.value })} 
-                            className="bg-transparent border-b border-gray-250 focus:border-primary outline-none font-mono py-0.5 w-32 focus:font-semibold text-gray-800 transition-colors"
-                          />
+                        
+                        {/* Username field with inline visual icon */}
+                        <td className="px-4 py-4 text-center">
+                          <div className="relative w-32 mx-auto">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                            </span>
+                            <input 
+                              type="text" 
+                              readOnly
+                              value={editableUsernames[stud.id] || ""} 
+                              onChange={(e) => setEditableUsernames({ ...editableUsernames, [stud.id]: e.target.value })} 
+                              className="w-full h-9 pl-9 pr-3 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-800 focus:border-[#F59E0B] outline-none transition-all shadow-inner"
+                            />
+                          </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-1.5">
+
+                        {/* Password field with eye toggles */}
+                        <td className="px-4 py-4 text-center">
+                          <div className="relative w-44 mx-auto">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                            </span>
                             <input 
                               type={showPassword[stud.id] ? "text" : "password"} 
+                              readOnly
                               value={editablePasswords[stud.id] || ""} 
                               onChange={(e) => setEditablePasswords({ ...editablePasswords, [stud.id]: e.target.value })} 
-                              className="bg-transparent border-b border-gray-250 focus:border-primary outline-none font-mono py-0.5 w-32 focus:font-semibold text-gray-800 transition-colors"
+                              className="w-full h-8 pl-8 pr-8 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-800 focus:border-[#F59E0B] outline-none transition-all shadow-inner"
                             />
                             <button 
                               type="button" 
                               onClick={() => setShowPassword({ ...showPassword, [stud.id]: !showPassword[stud.id] })} 
-                              className="text-gray-400 hover:text-gray-600 p-0.5 transition-colors no-print"
+                              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600 transition-colors"
                             >
                               {showPassword[stud.id] ? (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
                               ) : (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                               )}
                             </button>
                           </div>
                         </td>
-                        <td className="px-6 py-4 no-print">
-                          <div className="flex items-center gap-2">
+
+                        {/* Actions */}
+                        <td className="px-4 py-4 no-print text-center">
+                          <div className="flex items-center justify-center gap-2">
                             <button 
                               onClick={() => handleSaveCredentials(stud.id)} 
-                              className="px-3 py-1 bg-green-50 hover:bg-green-100 text-green-700 text-[10px] font-black uppercase tracking-widest rounded-lg transition-colors border border-green-200"
+                              title="Save Credentials" 
+                              className="p-1.5 rounded-lg border border-gray-200 hover:bg-[#F5A623]/10 hover:text-primary hover:border-primary/20 text-gray-600 transition-all flex items-center justify-center shadow-sm"
                             >
-                              Save
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
                             </button>
                             <button 
                               onClick={() => handleSendCredentials(stud)} 
-                              className="px-3 py-1 bg-primary/10 hover:bg-primary/20 text-[#D97706] text-[10px] font-black uppercase tracking-widest rounded-lg transition-colors border border-primary/30"
+                              title="Email Credentials" 
+                              className="p-1.5 rounded-lg border border-gray-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-100 text-gray-600 transition-all flex items-center justify-center shadow-sm"
                             >
-                              Send
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                             </button>
                           </div>
                         </td>
@@ -2962,6 +2887,7 @@ function ManageLoginView() {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
 
             {/* Pagination stats footer */}
@@ -2989,36 +2915,30 @@ function ManageLoginView() {
       </div>
 
       {/* Print sheet */}
-      <div className="print-only-container hidden print:block bg-white text-black p-10 font-sans">
-        <div className="text-center pb-6 mb-8 border-b border-gray-300">
-          <h1 className="text-2xl font-black uppercase tracking-widest text-amber-900">Campus One</h1>
-          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mt-1">Student Login Credentials Ledger</p>
-          <p className="text-[9px] text-gray-400 mt-2">Generated On: {new Date().toLocaleDateString()}</p>
-        </div>
-
-        <table className="w-full text-left text-xs border-collapse">
-          <thead>
-            <tr className="border-b border-gray-400 bg-gray-50 text-[10px] font-black uppercase tracking-widest text-gray-700">
-              <th className="py-3 px-2">ID</th>
-              <th className="py-3 px-2">Student Name</th>
-              <th className="py-3 px-2">Class Name</th>
-              <th className="py-3 px-2">Login Username</th>
-              <th className="py-3 px-2">Login Password</th>
+      <PrintTemplate title="Student Login Credentials" subtitle="Confidential — Do Not Distribute">
+        <PrintTable>
+          <PrintThead>
+            <tr>
+              <PrintTh>ID</PrintTh>
+              <PrintTh>Student Name</PrintTh>
+              <PrintTh>Class Name</PrintTh>
+              <PrintTh>Login Username</PrintTh>
+              <PrintTh>Login Password</PrintTh>
             </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
+          </PrintThead>
+          <tbody>
             {filteredList.map(stud => (
-              <tr key={stud.id} className="text-xs">
-                <td className="py-3 px-2 font-bold text-gray-900">{stud.id}</td>
-                <td className="py-3 px-2 font-semibold text-gray-800">{stud.name}</td>
-                <td className="py-3 px-2">{stud.level || "Class 1"}</td>
-                <td className="py-3 px-2 font-mono text-gray-700">{editableUsernames[stud.id] || "N/A"}</td>
-                <td className="py-3 px-2 font-mono text-gray-700">{editablePasswords[stud.id] || "N/A"}</td>
+              <tr key={stud.id}>
+                <PrintTd variant="bold">{stud.id}</PrintTd>
+                <PrintTd variant="bold">{stud.name}</PrintTd>
+                <PrintTd>{stud.level || "Class 1"}</PrintTd>
+                <PrintTd variant="muted">{editableUsernames[stud.id] || "N/A"}</PrintTd>
+                <PrintTd variant="muted">{editablePasswords[stud.id] || "N/A"}</PrintTd>
               </tr>
             ))}
           </tbody>
-        </table>
-      </div>
+        </PrintTable>
+      </PrintTemplate>
     </div>
   );
 }
@@ -3059,10 +2979,10 @@ function AllEmployeesGrid({ onEdit, onViewDetails }: { onEdit: (emp: any) => voi
 
     function loadDefaultMock() {
       const defaultEmployees = [
-        { id: "1", name: "Albert Einstein", role: "Physics Teacher", department: "Science", status: "Active" },
-        { id: "2", name: "Marie Curie", role: "Chemistry Teacher", department: "Science", status: "Active" },
-        { id: "3", name: "Isaac Newton", role: "Math Teacher", department: "Mathematics", status: "Active" },
-        { id: "4", name: "Ada Lovelace", role: "Computer Instructor", department: "Technology", status: "Active" }
+        { id: "1", name: "Albert Einstein", role: "Professor", department: "Science", status: "Active" },
+        { id: "2", name: "Marie Curie", role: "Professor", department: "Science", status: "Active" },
+        { id: "3", name: "Isaac Newton", role: "Professor", department: "Mathematics", status: "Active" },
+        { id: "4", name: "Ada Lovelace", role: "Professor", department: "Technology", status: "Active" }
       ];
       setEmployees(defaultEmployees);
       localStorage.setItem("campus_one_employees", JSON.stringify(defaultEmployees));
@@ -3090,7 +3010,7 @@ function AllEmployeesGrid({ onEdit, onViewDetails }: { onEdit: (emp: any) => voi
     <div className="space-y-6">
       <div className="flex justify-center items-center gap-4">
         <form onSubmit={handleSearch} className="relative w-full max-w-md">
-          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 bg-white px-2 relative z-10 -mb-2 w-fit">
+          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 px-2 relative z-10 -mb-2 w-fit">
             Search Employee <span className="text-red-500">*</span>
           </label>
           <div className="relative">
@@ -3158,7 +3078,7 @@ function NewEmployeeForm() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
-  const [role, setRole] = useState("");
+  const [role, setRole] = useState("Professor");
   const [joiningDate, setJoiningDate] = useState("");
   const [salary, setSalary] = useState("");
   const [image, setImage] = useState("");
@@ -3221,7 +3141,7 @@ function NewEmployeeForm() {
     // Reset fields
     setName("");
     setMobile("");
-    setRole("");
+    setRole("Professor");
     setJoiningDate("");
     setSalary("");
     setImage("");
@@ -3234,7 +3154,7 @@ function NewEmployeeForm() {
   const handleReset = () => {
     setName("");
     setMobile("");
-    setRole("");
+    setRole("Professor");
     setJoiningDate("");
     setSalary("");
     setImage("");
@@ -3242,22 +3162,7 @@ function NewEmployeeForm() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-20">
-      {isSuccess && (
-        <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-4 flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="flex items-center gap-3 text-green-700">
-            <div className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>
-            </div>
-            <div>
-              <p className="font-bold">Success!</p>
-              <p className="text-xs font-medium opacity-80">Employee has been successfully registered.</p>
-            </div>
-          </div>
-          <button type="button" onClick={() => setIsSuccess(false)} className="text-green-700 hover:bg-green-500/20 p-1.5 rounded-lg transition-colors">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+      {isSuccess && <SuccessToast message="Employee has been successfully registered." onClose={() => setIsSuccess(false)} />}
 
       <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
         <div className="text-center mb-10">
@@ -3318,36 +3223,40 @@ function NewEmployeeForm() {
                   <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
                     Employee Role <span className="text-red-500">*</span>
                   </label>
-                  <select required value={role} onChange={(e) => setRole(e.target.value)} className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65rem_auto] bg-[right_1.25rem_center] bg-no-repeat pr-10">
-                    <option value="">Select*</option>
-                    <option value="Principal">Principal</option>
-                    <option value="Management Staff">Management Staff</option>
-                    <option value="Teacher">Teacher</option>
-                    <option value="Accountant">Accountant</option>
-                    <option value="Store Manager">Store Manager</option>
-                    <option value="Other">Other</option>
-                  </select>
+                  <input readOnly value="Professor" className="w-full h-12 rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 outline-none cursor-default" />
                 </div>
 
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
-                    Mobile No for SMS/WhatsApp
+                    Mobile No for SMS/WhatsApp <span className="text-red-500">*</span>
                   </label>
-                  <input type="text" value={mobile} onChange={(e) => setMobile(e.target.value)} placeholder="e.g +44xxxxxxxxxx" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, ''); }} />
+                  <input required type="text" value={mobile} onChange={(e) => setMobile(e.target.value)} placeholder="e.g +63xxxxxxxxxx" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, ''); }} />
                 </div>
 
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
                     Monthly Salary <span className="text-red-500">*</span>
                   </label>
-                  <input required type="number" value={salary} onChange={(e) => setSalary(e.target.value)} placeholder="Monthly Salary" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, ''); }} />
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">₱</span>
+                    <input required type="number" value={salary} onChange={(e) => setSalary(e.target.value)} placeholder="0.00" className="w-full h-12 rounded-xl border border-gray-200 bg-white pl-8 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#F59E0B] outline-none transition-all" onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, ''); }} />
+                  </div>
                 </div>
 
                 <div className="space-y-1 md:col-span-2">
                   <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
                     Date of Joining <span className="text-red-500">*</span>
                   </label>
-                  <input required type="date" value={joiningDate} onChange={(e) => setJoiningDate(e.target.value)} className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+                  <input required type="text" value={joiningDate} onChange={(e) => {
+                    let value = e.target.value.replace(/[^0-9]/g, '');
+                    if (value.length >= 2) {
+                      value = value.slice(0, 2) + '/' + value.slice(2);
+                    }
+                    if (value.length >= 5) {
+                      value = value.slice(0, 5) + '/' + value.slice(5, 9);
+                    }
+                    setJoiningDate(value);
+                  }} placeholder="MM/DD/YYYY" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all placeholder:text-gray-500" />
                 </div>
               </div>
             </div>
@@ -3371,9 +3280,10 @@ function NewEmployeeForm() {
 
 // Edit Employee Form matching Image 2 exactly
 function EditEmployeeForm({ employee, onCancel }: { employee: any; onCancel: () => void }) {
+  const [isSuccess, setIsSuccess] = useState(false);
   const [name, setName] = useState(employee.name || "");
   const [mobile, setMobile] = useState(employee.mobile || "");
-  const [role, setRole] = useState(employee.role || "");
+  const [role, setRole] = useState("Professor");
   const [joiningDate, setJoiningDate] = useState(employee.joiningDate || "");
   const [salary, setSalary] = useState(employee.salary || "");
   const [image, setImage] = useState(employee.image || "");
@@ -3420,11 +3330,13 @@ function EditEmployeeForm({ employee, onCancel }: { employee: any; onCancel: () 
     });
 
     localStorage.setItem("campus_one_employees", JSON.stringify(updatedEmployees));
-    onCancel(); // return to grid
+    setIsSuccess(true);
+    setTimeout(() => { setIsSuccess(false); onCancel(); }, 2000);
   };
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-20 no-print">
+      {isSuccess && <SuccessToast message="Employee record updated successfully." onClose={() => setIsSuccess(false)} />}
       {/* Breadcrumbs matching Image 2 */}
       <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-widest border-b border-gray-100 pb-3">
         <span>Employees</span>
@@ -3495,22 +3407,14 @@ function EditEmployeeForm({ employee, onCancel }: { employee: any; onCancel: () 
                   <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
                     Employee Role <span className="text-red-500">*</span>
                   </label>
-                  <select required value={role} onChange={(e) => setRole(e.target.value)} className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65rem_auto] bg-[right_1.25rem_center] bg-no-repeat pr-10">
-                    <option value="">Select*</option>
-                    <option value="Principal">Principal</option>
-                    <option value="Management Staff">Management Staff</option>
-                    <option value="Teacher">Teacher</option>
-                    <option value="Accountant">Accountant</option>
-                    <option value="Store Manager">Store Manager</option>
-                    <option value="Other">Other</option>
-                  </select>
+                  <input readOnly value="Professor" className="w-full h-12 rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 outline-none cursor-default" />
                 </div>
 
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">
                     Mobile No for SMS/WhatsApp
                   </label>
-                  <input type="text" value={mobile} onChange={(e) => setMobile(e.target.value)} placeholder="e.g +44xxxxxxxxxx" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, ''); }} />
+                  <input type="text" value={mobile} onChange={(e) => setMobile(e.target.value)} placeholder="e.g +63xxxxxxxxxx" className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, ''); }} />
                 </div>
 
                 <div className="space-y-1">
@@ -3597,109 +3501,50 @@ function JobLetterView({ initialEmployee, onBack }: { initialEmployee?: any; onB
     <div className="w-full">
       {/* Dynamic PRINT ONLY letter wrapper */}
       {selectedEmployee && (
-        <div className="print-only-container hidden print:block bg-white text-black p-10 font-sans leading-relaxed text-sm">
-          {/* Print head matching Image 4 */}
-          <div className="flex flex-col items-center text-center border-b border-gray-300 pb-6 mb-8">
-            <svg className="w-16 h-16 text-primary mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/></svg>
-            <h1 className="text-3xl font-black tracking-tight text-amber-900">Campus One</h1>
-            <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-0.5">"YOUR SCHOOL SOFTWARE"</p>
-            <p className="text-xs text-gray-500 mt-1">+923490204447 | info@eskooly.com | info@campusone.com</p>
-            <div className="h-[2px] w-32 bg-primary mt-4"></div>
-            <h2 className="text-xl font-bold tracking-tight text-amber-900 mt-4 border-b border-amber-900 pb-1 px-4">Job Letter</h2>
-          </div>
-
-          {/* Letter Body Details grid matching Image 4 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 pt-4">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-              <span className="text-gray-500 font-bold uppercase tracking-wider text-[10px]">Serial No / ID</span>
-              <span className="font-bold text-gray-900">{selectedEmployee.id}</span>
-            </div>
-            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-              <span className="text-gray-500 font-bold uppercase tracking-wider text-[10px]">Registration Date</span>
-              <span className="font-bold text-gray-900">{selectedEmployee.joiningDate || "18 May, 2000"}</span>
-            </div>
-            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-              <span className="text-gray-500 font-bold uppercase tracking-wider text-[10px]">Employee Name</span>
-              <span className="font-bold text-gray-900">{selectedEmployee.name}</span>
-            </div>
-            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-              <span className="text-gray-500 font-bold uppercase tracking-wider text-[10px]">Father / Husband Name</span>
-              <span className="font-bold text-gray-900">{selectedEmployee.fatherName || "N/A"}</span>
-            </div>
-            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-              <span className="text-gray-500 font-bold uppercase tracking-wider text-[10px]">National ID</span>
-              <span className="font-bold text-gray-900">{selectedEmployee.nationalId || "N/A"}</span>
-            </div>
-            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-              <span className="text-gray-500 font-bold uppercase tracking-wider text-[10px]">Employee Role</span>
-              <span className="font-bold text-gray-900">{selectedEmployee.role}</span>
-            </div>
-            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-              <span className="text-gray-500 font-bold uppercase tracking-wider text-[10px]">Monthly Salary</span>
-              <span className="font-bold text-gray-900">₱{selectedEmployee.salary || "12,323"}</span>
-            </div>
-            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-              <span className="text-gray-500 font-bold uppercase tracking-wider text-[10px]">Mobile No</span>
-              <span className="font-bold text-gray-900">{selectedEmployee.mobile || "N/A"}</span>
-            </div>
-            <div className="flex items-center justify-between border-b border-gray-100 pb-2 md:col-span-2">
-              <span className="text-gray-500 font-bold uppercase tracking-wider text-[10px]">Home Address</span>
-              <span className="font-bold text-gray-900">{selectedEmployee.address || "N/A"}</span>
-            </div>
-            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-              <span className="text-gray-500 font-bold uppercase tracking-wider text-[10px]">Date of Birth</span>
-              <span className="font-bold text-gray-900">{selectedEmployee.dob || "N/A"}</span>
-            </div>
-            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-              <span className="text-gray-500 font-bold uppercase tracking-wider text-[10px]">Blood Group</span>
-              <span className="font-bold text-gray-900">{selectedEmployee.bloodGroup || "N/A"}</span>
-            </div>
-            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-              <span className="text-gray-500 font-bold uppercase tracking-wider text-[10px]">Experience</span>
-              <span className="font-bold text-gray-900">{selectedEmployee.experience || "N/A"}</span>
-            </div>
-            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-              <span className="text-gray-500 font-bold uppercase tracking-wider text-[10px]">Email Address</span>
-              <span className="font-bold text-gray-900">{selectedEmployee.email || "N/A"}</span>
-            </div>
-          </div>
+        <PrintTemplate title="Job Letter" subtitle={selectedEmployee.role}>
+          <PrintInfoGrid columns={2} items={[
+            { label: "Serial No / ID",        value: selectedEmployee.id, highlight: true },
+            { label: "Registration Date",     value: selectedEmployee.joiningDate || "18 May, 2000" },
+            { label: "Employee Name",         value: selectedEmployee.name },
+            { label: "Father / Husband Name", value: selectedEmployee.fatherName },
+            { label: "National ID",           value: selectedEmployee.nationalId },
+            { label: "Employee Role",         value: selectedEmployee.role },
+            { label: "Monthly Salary",        value: selectedEmployee.salary ? `₱${selectedEmployee.salary}` : "₱12,323" },
+            { label: "Mobile No",             value: selectedEmployee.mobile },
+            { label: "Home Address",          value: selectedEmployee.address },
+            { label: "Date of Birth",         value: selectedEmployee.dob },
+            { label: "Blood Group",           value: selectedEmployee.bloodGroup },
+            { label: "Experience",            value: selectedEmployee.experience },
+            { label: "Email Address",         value: selectedEmployee.email },
+          ]} />
 
           {/* QR Portal Code Scan Section */}
-          <div className="mt-12 p-6 border-2 border-dashed border-primary/20 rounded-2xl bg-primary/5 text-center flex flex-col items-center justify-center">
-            <h3 className="text-amber-900 font-black uppercase tracking-widest text-xs mb-6">SCAN OR CODE TO ACCESS PORTAL</h3>
-            <div className="flex items-center justify-around w-full max-w-lg">
-              <div className="flex flex-col items-center gap-1">
-                <QRCodeSVG />
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">Web Portal</span>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <QRCodeSVG />
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">Android App</span>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <QRCodeSVG />
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">iOS App</span>
-              </div>
+          <PrintSection title="Scan to Access Portal">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-around", padding: "16px 0" }}>
+              {["Web Portal", "Android App", "iOS App"].map(label => (
+                <div key={label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
+                  <QRCodeSVG />
+                  <span style={{ fontSize: "9px", fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</span>
+                </div>
+              ))}
             </div>
-          </div>
+          </PrintSection>
 
-          {/* Official Regulations */}
-          <div className="mt-12 space-y-3">
-            <h4 className="text-xs font-black uppercase text-gray-800 tracking-wider">Rules And Regulations:</h4>
-            <p className="text-xs text-gray-600 leading-relaxed">
-              The school rules have been established in partnership with the community over a long period of time. They reflect the school community's expectations of acceptable standards of behaviour, dress, and personal presentation. Students and staff are expected to follow the school rules at all times when on the school grounds, representing the school, attending a school activity or when clearly associated with the school.
+          {/* Rules */}
+          <PrintSection title="Rules and Regulations">
+            <p style={{ fontSize: "10px", color: "#4B5563", lineHeight: "1.6" }}>
+              The school rules have been established in partnership with the community over a long period of time. They reflect the school community&apos;s expectations of acceptable standards of behaviour, dress, and personal presentation. Students and staff are expected to follow the school rules at all times when on the school grounds, representing the school, attending a school activity or when clearly associated with the school.
             </p>
-          </div>
+          </PrintSection>
 
-          {/* Signatures */}
-          <div className="mt-16 flex items-center justify-between">
-            <div className="text-xs text-gray-400">Printed via Campus One Enterprise System</div>
-            <div className="border-t border-gray-800 pt-2 text-right">
-              <span className="text-xs font-bold text-gray-800 uppercase tracking-wider block">Signature of Authority</span>
-              <span className="text-[10px] text-gray-400">Campus Principal / Director</span>
+          {/* Signature */}
+          <div style={{ marginTop: "40px", display: "flex", justifyContent: "flex-end" }}>
+            <div style={{ borderTop: "1px solid #1F2937", paddingTop: "8px", textAlign: "right" }}>
+              <span style={{ fontSize: "10px", fontWeight: 700, color: "#1F2937", textTransform: "uppercase", letterSpacing: "0.08em", display: "block" }}>Signature of Authority</span>
+              <span style={{ fontSize: "9px", color: "#6B7280" }}>Campus Principal / Director</span>
             </div>
           </div>
-        </div>
+        </PrintTemplate>
       )}
 
       {/* Screen-Only layout */}
@@ -3793,40 +3638,6 @@ function JobLetterView({ initialEmployee, onBack }: { initialEmployee?: any; onB
         )}
       </div>
 
-      {/* Global CSS injection block to perfectly format A4 job letter print preview */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        @media print {
-          html, body {
-            background: white !important;
-            color: black !important;
-            font-family: 'Inter', sans-serif !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-          /* Completely strip off NextJS main frame layouts */
-          header, sidebar, footer, nav, aside, button, .no-print, [role="navigation"] {
-            display: none !important;
-            height: 0 !important;
-            width: 0 !important;
-            opacity: 0 !important;
-            visibility: hidden !important;
-          }
-          .print-only-container {
-            display: block !important;
-            visibility: visible !important;
-            width: 100% !important;
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            margin: 0 !important;
-            padding: 40px !important;
-            background: white !important;
-          }
-          .print-only-container * {
-            visibility: visible !important;
-          }
-        }
-      `}} />
     </div>
   );
 }
@@ -3920,15 +3731,60 @@ function StaffLoginView() {
     triggerNotification("Success: Credentials exported to Excel spreadsheet successfully!");
   };
 
+  const buildStaffLoginPrintHTML = (clonedTable: HTMLTableElement, tabTitle: string) => {
+    clonedTable.querySelectorAll('.no-print').forEach(el => el.remove());
+    clonedTable.querySelectorAll('span svg').forEach(icon => {
+      const span = icon.parentElement;
+      if (span) span.remove();
+    });
+    const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    return `<html><head><title>${tabTitle}</title><style>
+body { font-family: Inter, sans-serif; margin: 40px; color: #111827; }
+.doc-header { text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #E5E7EB; }
+.doc-header h1 { margin: 0; font-size: 26px; font-weight: 900; color: #1F2937; letter-spacing: -0.5px; }
+.doc-header .tagline { margin: 3px 0 0; font-size: 8px; font-weight: 800; color: #6B7280; text-transform: uppercase; letter-spacing: 3px; }
+.doc-header h2 { margin: 12px 0 0; font-size: 18px; font-weight: 900; color: #F59E0B; text-transform: uppercase; letter-spacing: 2px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.doc-header .gen-date { margin: 4px 0 0; font-size: 8px; color: #9CA3AF; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th, td { border: 1px solid #FCD34D; padding: 10px 12px; text-align: left; }
+th { background-color: #F59E0B; color: white; font-weight: 800; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+tr:nth-child(even) td { background-color: #FFFBEB; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+tr:nth-child(odd) td { background-color: white; }
+input { border: none; background: transparent; font-size: 12px; font-family: inherit; width: 100%; }
+@page { size: A4; margin: 0.6in; }
+</style></head><body>
+<div class="doc-header">
+  <h1>Campus One</h1>
+  <p class="tagline">Your School Software</p>
+  <h2>${tabTitle}</h2>
+  <p class="gen-date">Generated On: ${date}</p>
+</div>
+${clonedTable.outerHTML}
+</body></html>`;
+  };
+
   const handlePrintTable = () => {
-    window.print();
+    const tableElement = document.querySelector('table');
+    if (tableElement) {
+      const clonedTable = tableElement.cloneNode(true) as HTMLTableElement;
+      const printWindow = window.open('', '', 'height=600,width=1000');
+      if (!printWindow) return;
+      printWindow.document.write(buildStaffLoginPrintHTML(clonedTable, 'Employee Login Credentials'));
+      printWindow.document.close();
+      printWindow.print();
+    }
   };
 
   const handleExportPDF = () => {
-    triggerNotification("Tip: Please set your printer destination to 'Save as PDF' in the print dialogue to save your credentials sheet!");
-    setTimeout(() => {
-      window.print();
-    }, 500);
+    const tableElement = document.querySelector('table');
+    if (tableElement) {
+      const clonedTable = tableElement.cloneNode(true) as HTMLTableElement;
+      const printWindow = window.open('', '', 'height=600,width=1000');
+      if (!printWindow) return;
+      printWindow.document.write(buildStaffLoginPrintHTML(clonedTable, 'Employee Login Credentials'));
+      printWindow.document.close();
+      printWindow.print();
+    }
   };
 
   // Filter logic based on left filter bar + table top search
@@ -3955,44 +3811,27 @@ function StaffLoginView() {
 
   return (
     <div className="space-y-6">
-      {notification && (
-        <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-4 flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="flex items-center gap-3 text-green-700 text-sm">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>
-            <span className="font-bold">{notification}</span>
-          </div>
-          <button type="button" onClick={() => setNotification(null)} className="text-green-700 hover:bg-green-500/20 p-1.5 rounded-lg transition-colors">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+      {notification && <SuccessToast message={notification} onClose={() => setNotification(null)} />}
 
-      {/* Grid container matching Image 5 */}
-      <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_2.2fr] gap-6 items-start">
-        {/* Left Filter Card */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm space-y-8">
-          <div className="flex flex-col items-center text-center gap-2">
-            <div className="flex items-center gap-2 text-gray-900 font-black text-xl">
-              <Search className="w-5 h-5 text-primary" />
-              Search
-            </div>
-          </div>
-
-          <div className="space-y-6">
+      {/* Full width container */}
+      <div className="space-y-6">
+        {/* Search and Filter Bar */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm no-print">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 bg-white px-2 relative z-10 -mb-2 w-fit">Search Employee*</label>
+              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 px-2 relative z-10 -mb-2 w-fit">Search Employee <span className="text-red-500">*</span></label>
               <input 
                 type="text" 
                 value={searchEmployee}
                 onChange={(e) => setSearchEmployee(e.target.value)}
                 placeholder="Search Employee" 
-                className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all shadow-sm"
+                className="w-full h-10 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all shadow-sm"
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 bg-white px-2 relative z-10 -mb-2 w-fit">Select Role*</label>
-              <select value={selectRole} onChange={(e) => setSelectRole(e.target.value)} className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65rem_auto] bg-[right_1.25rem_center] bg-no-repeat pr-10">
-                <option value="Select">Select*</option>
+              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 px-2 relative z-10 -mb-2 w-fit">Select Role <span className="text-red-500">*</span></label>
+              <select value={selectRole} onChange={(e) => setSelectRole(e.target.value)} className="w-full h-10 rounded-xl border border-gray-200 bg-white px-4 text-sm focus:border-[#F59E0B] outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65rem_auto] bg-[right_1.25rem_center] bg-no-repeat pr-10" style={{ color: selectRole === "Select" ? '#6b7280' : '#111827' }}>
+                <option value="Select" style={{ color: '#6b7280' }}>Select Role</option>
                 <option value="Principal">Principal</option>
                 <option value="Management Staff">Management Staff</option>
                 <option value="Teacher">Teacher</option>
@@ -4001,106 +3840,104 @@ function StaffLoginView() {
                 <option value="Other">Other</option>
               </select>
             </div>
-            <div className="text-center pt-2">
-              <button onClick={handleReloadAll} className="text-primary hover:underline text-xs font-bold uppercase tracking-widest transition-all">or, Reload All</button>
-            </div>
           </div>
         </div>
 
-        {/* Right Data Table Panel */}
+        {/* Data Table Panel */}
         <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
-          <div className="p-8 space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="p-6 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-4 no-print">
               <div className="flex flex-wrap gap-2">
                 {["Excel", "PDF", "Print"].map(tool => (
                   <button 
-                    key={tool} 
+                    key={tool}
                     onClick={() => {
                       if (tool === "Excel") handleExportExcel();
                       if (tool === "PDF") handleExportPDF();
                       if (tool === "Print") handlePrintTable();
                     }} 
-                    className="px-4 py-2 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 hover:bg-gray-50 transition-all shadow-sm"
+                    className="px-4 py-2 bg-gray-50 border border-gray-250 rounded-xl text-xs font-black uppercase tracking-widest text-gray-700 hover:bg-primary hover:text-white hover:border-primary transition-all flex items-center gap-2 shadow-sm"
                   >
+                    {tool === "Excel" && <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>}
+                    {tool === "PDF" && <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>}
+                    {tool === "Print" && <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>}
                     {tool}
                   </button>
                 ))}
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">Search:</span>
-                <input type="text" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} placeholder="Search..." className="h-10 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all shadow-sm w-48" />
-              </div>
             </div>
 
-            {/* Scrollable table grid */}
-            <div className="overflow-x-auto rounded-2xl border border-gray-100 shadow-inner">
-              <table className="w-full text-left text-[13px] divide-y divide-gray-150">
-                <thead className="bg-primary text-white text-[10px] font-black uppercase tracking-widest">
+            <div className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-[13px]">
+                <thead className="bg-primary text-white text-[11px] font-black uppercase tracking-widest">
                   <tr>
-                    <th className="px-6 py-4">ID</th>
-                    <th className="px-6 py-4">Staff Name</th>
-                    <th className="px-6 py-4">Role</th>
-                    <th className="px-6 py-4">Username</th>
-                    <th className="px-6 py-4">Password</th>
-                    <th className="px-6 py-4">Actions</th>
+                    <th className="px-4 py-4 text-center">ID</th>
+                    <th className="px-4 py-4 text-center">Staff Name</th>
+                    <th className="px-4 py-4 text-center">Role</th>
+                    <th className="px-4 py-4 text-center">Username</th>
+                    <th className="px-4 py-4 text-center">Password</th>
+                    <th className="px-4 py-4 text-center no-print">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 bg-white">
                   {filteredList.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-20 text-center text-gray-400 font-bold uppercase tracking-widest text-[11px] bg-gray-50/50">
-                        No data available in table
+                      <td colSpan={6} className="px-4 py-16 text-center text-gray-500/40 font-bold uppercase tracking-widest text-[12px] bg-gray-50/30">
+                        No employees found
                       </td>
                     </tr>
                   ) : (
                     paginatedList.map(emp => (
                       <tr key={emp.id} className="hover:bg-gray-50/40 transition-colors">
-                        <td className="px-6 py-4 font-bold text-gray-900">{emp.id}</td>
-                        <td className="px-6 py-4 font-semibold text-gray-700">{emp.name}</td>
-                        <td className="px-6 py-4">
-                          <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">{emp.role}</span>
+                        <td className="px-4 py-4 font-bold text-gray-900 text-[12px] text-center">{emp.id}</td>
+                        <td className="px-4 py-4 font-semibold text-gray-700 text-[12px] text-center">{emp.name}</td>
+                        <td className="px-4 py-4 text-center">
+                          <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest">{emp.role}</span>
                         </td>
                         
                         {/* Username field with inline visual icon */}
-                        <td className="px-6 py-4">
-                          <div className="relative w-44">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                              <Users className="w-3.5 h-3.5" />
+                        <td className="px-4 py-4 text-center">
+                          <div className="relative w-48 mx-auto">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">
+                              <Users className="w-3 h-3" />
                             </span>
                             <input 
                               type="text" 
+                              readOnly
                               value={editableUsernames[emp.id] || ""} 
                               onChange={(e) => setEditableUsernames({ ...editableUsernames, [emp.id]: e.target.value })}
-                              className="w-full h-9 pl-9 pr-3 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-800 focus:border-[#F59E0B] outline-none transition-all shadow-inner"
+                              className="w-full h-9 pl-9 pr-3 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-800 focus:border-[#F59E0B] outline-none transition-all shadow-inner"
                             />
                           </div>
                         </td>
 
                         {/* Password field with eye toggles */}
-                        <td className="px-6 py-4">
-                          <div className="relative w-44">
+                        <td className="px-4 py-4 text-center">
+                          <div className="relative w-44 mx-auto">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                             </span>
                             <input 
                               type={showPassword[emp.id] ? "text" : "password"} 
+                              readOnly
                               value={editablePasswords[emp.id] || ""} 
                               onChange={(e) => setEditablePasswords({ ...editablePasswords, [emp.id]: e.target.value })}
-                              className="w-full h-9 pl-9 pr-10 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-800 focus:border-[#F59E0B] outline-none transition-all shadow-inner"
+                              className="w-full h-8 pl-8 pr-8 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-800 focus:border-[#F59E0B] outline-none transition-all shadow-inner"
                             />
                             <button 
                               type="button" 
                               onClick={() => setShowPassword({ ...showPassword, [emp.id]: !showPassword[emp.id] })} 
-                              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600 transition-colors"
+                              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600 transition-colors"
                             >
-                              {showPassword[emp.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                              {showPassword[emp.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                             </button>
                           </div>
                         </td>
 
                         {/* Floppy save and Letter envelope send icon actions */}
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
+                        <td className="px-4 py-4 text-center">
+                          <div className="flex items-center justify-center gap-2">
                             <button 
                               onClick={() => handleSaveCredentials(emp.id)} 
                               title="Save Credentials" 
@@ -4122,6 +3959,7 @@ function StaffLoginView() {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
 
             {/* Pagination stats footer */}
@@ -4149,42 +3987,34 @@ function StaffLoginView() {
       </div>
 
       {/* Print-Only credentials list */}
-      <div className="print-only-container hidden print:block bg-white text-black p-10 font-sans leading-relaxed text-sm">
-        <div className="flex flex-col items-center text-center border-b border-gray-300 pb-6 mb-8">
-          <svg className="w-16 h-16 text-primary mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/></svg>
-          <h1 className="text-3xl font-black tracking-tight text-amber-900">Campus One</h1>
-          <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-0.5">"YOUR SCHOOL SOFTWARE"</p>
-          <h2 className="text-xl font-bold tracking-tight text-amber-900 mt-4 border-b border-amber-900 pb-1 px-4">Staff Credentials Ledger</h2>
-          <p className="text-[10px] text-gray-400 mt-1">Printed via Campus One Enterprise System</p>
-        </div>
-
-        <table className="w-full text-left text-xs border border-gray-300 divide-y divide-gray-300 border-collapse">
-          <thead>
-            <tr className="bg-gray-50">
-              <th className="px-4 py-3 border border-gray-300 font-bold uppercase tracking-wider text-[9px] text-gray-500">ID</th>
-              <th className="px-4 py-3 border border-gray-200 font-bold uppercase tracking-wider text-[9px] text-gray-500">Staff Name</th>
-              <th className="px-4 py-3 border border-gray-300 font-bold uppercase tracking-wider text-[9px] text-gray-500">Role</th>
-              <th className="px-4 py-3 border border-gray-300 font-bold uppercase tracking-wider text-[9px] text-gray-500">Username</th>
-              <th className="px-4 py-3 border border-gray-300 font-bold uppercase tracking-wider text-[9px] text-gray-500">Password</th>
+      <PrintTemplate title="Staff Credentials Ledger" subtitle="Confidential — Do Not Distribute">
+        <PrintTable>
+          <PrintThead>
+            <tr>
+              <PrintTh>ID</PrintTh>
+              <PrintTh>Staff Name</PrintTh>
+              <PrintTh>Role</PrintTh>
+              <PrintTh>Username</PrintTh>
+              <PrintTh>Password</PrintTh>
             </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-150">
+          </PrintThead>
+          <tbody>
             {filteredList.map(emp => {
-              const username = editableUsernames[emp.id] || ("1664586" + emp.name.toLowerCase().replace(/[^a-z]/g, '').slice(0, 4));
-              const password = editablePasswords[emp.id] || ("1664586" + emp.name.toLowerCase().replace(/[^a-z]/g, '').slice(0, 4));
+              const username = editableUsernames[emp.id] || ("1664586" + emp.name.toLowerCase().replace(/[^a-z]/g, "").slice(0, 4));
+              const password = editablePasswords[emp.id] || ("1664586" + emp.name.toLowerCase().replace(/[^a-z]/g, "").slice(0, 4));
               return (
                 <tr key={emp.id}>
-                  <td className="px-4 py-3 border border-gray-250 font-bold">{emp.id}</td>
-                  <td className="px-4 py-3 border border-gray-250 font-semibold">{emp.name}</td>
-                  <td className="px-4 py-3 border border-gray-250">{emp.role}</td>
-                  <td className="px-4 py-3 border border-gray-250 font-mono">{username}</td>
-                  <td className="px-4 py-3 border border-gray-250 font-mono">{password}</td>
+                  <PrintTd variant="bold">{emp.id}</PrintTd>
+                  <PrintTd variant="bold">{emp.name}</PrintTd>
+                  <PrintTd>{emp.role}</PrintTd>
+                  <PrintTd variant="muted">{username}</PrintTd>
+                  <PrintTd variant="muted">{password}</PrintTd>
                 </tr>
               );
             })}
           </tbody>
-        </table>
-      </div>
+        </PrintTable>
+      </PrintTemplate>
     </div>
   );
 }
@@ -4407,33 +4237,54 @@ function FeesPaidSlipView() {
 
 function FeesDefaultersView() {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
-      <div className="p-8 space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-gray-900">Fees Defaulters List</h3>
-          <button className="bg-red-500/10 text-red-500 px-4 py-2 rounded-lg text-xs font-bold border border-red-500/20">Print List</button>
-        </div>
-        <div className="overflow-x-auto rounded-xl border border-gray-200">
-          <table className="w-full text-left text-[13px]">
-            <thead className="bg-primary text-white text-[10px] font-black uppercase tracking-widest">
-              <tr>
-                <th className="px-6 py-4">ID</th>
-                <th className="px-6 py-4">Student Name</th>
-                <th className="px-6 py-4">Class</th>
-                <th className="px-6 py-4">Pending Amount</th>
-                <th className="px-6 py-4">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td colSpan={5} className="px-6 py-20 text-center text-gray-500/40 font-bold uppercase tracking-widest text-[11px] bg-gray-50/30">
-                  No defaulters found
-                </td>
-              </tr>
-            </tbody>
-          </table>
+    <div>
+      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm no-print">
+        <div className="p-8 space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-gray-900">Fees Defaulters List</h3>
+            <button onClick={() => window.print()} className="bg-red-500/10 text-red-500 px-4 py-2 rounded-lg text-xs font-bold border border-red-500/20">Print List</button>
+          </div>
+          <div className="overflow-x-auto rounded-xl border border-gray-200">
+            <table className="w-full text-left text-[13px]">
+              <thead className="bg-primary text-white text-[10px] font-black uppercase tracking-widest">
+                <tr>
+                  <th className="px-6 py-4">ID</th>
+                  <th className="px-6 py-4">Student Name</th>
+                  <th className="px-6 py-4">Class</th>
+                  <th className="px-6 py-4">Pending Amount</th>
+                  <th className="px-6 py-4">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colSpan={5} className="px-6 py-20 text-center text-gray-500/40 font-bold uppercase tracking-widest text-[11px] bg-gray-50/30">
+                    No defaulters found
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
+
+      <PrintTemplate title="Fees Defaulters List">
+        <PrintTable>
+          <PrintThead>
+            <tr>
+              <PrintTh>ID</PrintTh>
+              <PrintTh>Student Name</PrintTh>
+              <PrintTh>Class</PrintTh>
+              <PrintTh>Pending Amount</PrintTh>
+              <PrintTh>Status</PrintTh>
+            </tr>
+          </PrintThead>
+          <tbody>
+            <tr>
+              <td colSpan={5} style={{ padding: "24px", textAlign: "center", color: "#9CA3AF", fontSize: "11px" }}>No defaulters found</td>
+            </tr>
+          </tbody>
+        </PrintTable>
+      </PrintTemplate>
     </div>
   );
 }
@@ -4543,50 +4394,73 @@ function StudentsAttendanceReportView() {
   const dateRangeLabel = `${firstOfMonth.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} - ${now.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`;
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
-      <div className="p-8 space-y-8">
-        <div className="flex items-center gap-4">
-          <button className="bg-primary text-white px-6 py-2.5 rounded-lg text-xs font-black flex items-center gap-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            {dateRangeLabel}
-            <ChevronDown className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap gap-2">
-            {["Copy", "CSV", "Excel", "PDF", "Print"].map(tool => (
-              <button key={tool} className="px-4 py-2 bg-white/5 border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:bg-white/10 transition-all">{tool}</button>
-            ))}
+    <div>
+      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm no-print">
+        <div className="p-8 space-y-8">
+          <div className="flex items-center gap-4">
+            <button className="bg-primary text-white px-6 py-2.5 rounded-lg text-xs font-black flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              {dateRangeLabel}
+              <ChevronDown className="w-4 h-4" />
+            </button>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500 font-medium">Search:</span>
-            <input type="text" className="h-10 rounded-lg border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
-          </div>
-        </div>
 
-        <div className="overflow-x-auto rounded-xl border border-gray-200">
-          <table className="w-full text-left text-[13px]">
-            <thead className="bg-primary text-white text-[10px] font-black uppercase tracking-widest">
-              <tr>
-                <th className="px-6 py-4">DATE</th>
-                <th className="px-6 py-4">DAY</th>
-                <th className="px-6 py-4">ID</th>
-                <th className="px-6 py-4">NAME</th>
-                <th className="px-6 py-4">CLASS</th>
-                <th className="px-6 py-4">STATUS</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td colSpan={6} className="px-6 py-20 text-center text-gray-500/40 font-bold uppercase tracking-widest text-[11px] bg-gray-50/30">
-                  No data available in table
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap gap-2">
+              {["Copy", "CSV", "Excel", "PDF"].map(tool => (
+                <button key={tool} className="px-4 py-2 bg-white/5 border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:bg-white/10 transition-all">{tool}</button>
+              ))}
+              <button onClick={() => window.print()} className="px-4 py-2 bg-white/5 border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:bg-white/10 transition-all">Print</button>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 font-medium">Search:</span>
+              <input type="text" className="h-10 rounded-lg border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+            </div>
+          </div>
+
+          <div className="overflow-x-auto rounded-xl border border-gray-200">
+            <table className="w-full text-left text-[13px]">
+              <thead className="bg-primary text-white text-[10px] font-black uppercase tracking-widest">
+                <tr>
+                  <th className="px-6 py-4">DATE</th>
+                  <th className="px-6 py-4">DAY</th>
+                  <th className="px-6 py-4">ID</th>
+                  <th className="px-6 py-4">NAME</th>
+                  <th className="px-6 py-4">CLASS</th>
+                  <th className="px-6 py-4">STATUS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colSpan={6} className="px-6 py-20 text-center text-gray-500/40 font-bold uppercase tracking-widest text-[11px] bg-gray-50/30">
+                    No data available in table
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
+
+      <PrintTemplate title="Students Attendance Report" subtitle={dateRangeLabel}>
+        <PrintTable>
+          <PrintThead>
+            <tr>
+              <PrintTh>Date</PrintTh>
+              <PrintTh>Day</PrintTh>
+              <PrintTh>ID</PrintTh>
+              <PrintTh>Name</PrintTh>
+              <PrintTh>Class</PrintTh>
+              <PrintTh>Status</PrintTh>
+            </tr>
+          </PrintThead>
+          <tbody>
+            <tr>
+              <td colSpan={6} style={{ padding: "24px", textAlign: "center", color: "#9CA3AF", fontSize: "11px" }}>No data available</td>
+            </tr>
+          </tbody>
+        </PrintTable>
+      </PrintTemplate>
     </div>
   );
 }
@@ -4597,51 +4471,89 @@ function EmployeesAttendanceReportView() {
   const dateRangeLabel = `${firstOfMonth.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} - ${now.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`;
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
-      <div className="p-8 space-y-8">
-        <div className="flex items-center gap-4">
-          <button className="bg-primary text-white px-6 py-2.5 rounded-lg text-xs font-black flex items-center gap-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            {dateRangeLabel}
-            <ChevronDown className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap gap-2">
-            {["Copy", "CSV", "Excel", "PDF", "Print"].map(tool => (
-              <button key={tool} className="px-4 py-2 bg-white/5 border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:bg-white/10 transition-all">{tool}</button>
-            ))}
+    <div>
+      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm no-print">
+        <div className="p-8 space-y-8">
+          <div className="flex items-center gap-4">
+            <button className="bg-primary text-white px-6 py-2.5 rounded-lg text-xs font-black flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              {dateRangeLabel}
+              <ChevronDown className="w-4 h-4" />
+            </button>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500 font-medium">Search:</span>
-            <input type="text" className="h-10 rounded-lg border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
-          </div>
-        </div>
 
-        <div className="overflow-x-auto rounded-xl border border-gray-200">
-          <table className="w-full text-left text-[13px]">
-            <thead className="bg-primary text-white text-[10px] font-black uppercase tracking-widest">
-              <tr>
-                <th className="px-6 py-4">DATE</th>
-                <th className="px-6 py-4">DAY</th>
-                <th className="px-6 py-4">ID</th>
-                <th className="px-6 py-4">NAME</th>
-                <th className="px-6 py-4">TYPE</th>
-                <th className="px-6 py-4">STATUS</th>
-                <th className="px-6 py-4">TIME <span className="text-[10px] font-normal italic">[Card Scanning]</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td colSpan={7} className="px-6 py-20 text-center text-gray-500/40 font-bold uppercase tracking-widest text-[11px] bg-gray-50/30">
-                  No data available in table
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap gap-2">
+              {["Copy", "CSV", "Excel", "PDF"].map(tool => (
+                <button key={tool} className="px-4 py-2 bg-white/5 border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:bg-white/10 transition-all">{tool}</button>
+              ))}
+              <button onClick={() => window.print()} className="px-4 py-2 bg-white/5 border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:bg-white/10 transition-all">Print</button>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 font-medium">Search:</span>
+              <input type="text" className="h-10 rounded-lg border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+            </div>
+          </div>
+
+          <div className="overflow-x-auto rounded-xl border border-gray-200">
+            <table className="w-full text-left text-[13px]">
+              <thead className="bg-primary text-white text-[10px] font-black uppercase tracking-widest">
+                <tr>
+                  <th className="px-6 py-4">DATE</th>
+                  <th className="px-6 py-4">DAY</th>
+                  <th className="px-6 py-4">ID</th>
+                  <th className="px-6 py-4">NAME</th>
+                  <th className="px-6 py-4">TYPE</th>
+                  <th className="px-6 py-4">STATUS</th>
+                  <th className="px-6 py-4">TIME <span className="text-[10px] font-normal italic">[Card Scanning]</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colSpan={7} className="px-6 py-20 text-center text-gray-500/40 font-bold uppercase tracking-widest text-[11px] bg-gray-50/30">
+                    No data available in table
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
+
+      <PrintTemplate title="Employees Attendance Report" subtitle={dateRangeLabel}>
+        <PrintTable>
+          <PrintThead>
+            <tr>
+              <PrintTh>Date</PrintTh>
+              <PrintTh>Day</PrintTh>
+              <PrintTh>ID</PrintTh>
+              <PrintTh>Name</PrintTh>
+              <PrintTh>Type</PrintTh>
+              <PrintTh>Status</PrintTh>
+              <PrintTh>Time</PrintTh>
+            </tr>
+          </PrintThead>
+          <tbody>
+            <tr>
+              <td colSpan={7} style={{ padding: "24px", textAlign: "center", color: "#9CA3AF", fontSize: "11px" }}>No data available</td>
+            </tr>
+          </tbody>
+        </PrintTable>
+      </PrintTemplate>
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

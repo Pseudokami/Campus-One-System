@@ -134,7 +134,7 @@ export function SalaryView({ activeSubtab }: { activeSubtab: string }) {
   const netPay = grossPay - deductions;
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-8">
       <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-lg font-black text-gray-900">{activeSubtab}</h2>
@@ -157,7 +157,7 @@ export function SalaryView({ activeSubtab }: { activeSubtab: string }) {
       ) : null}
 
       {activeSubtab === "Allowances" ? (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[380px_1fr]">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[380px_1fr]">
           <form onSubmit={handleAllowanceSubmit} className="h-fit rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <h3 className="text-lg font-black text-gray-900">Add Allowance</h3>
             <div className="mt-6 space-y-5">
@@ -232,7 +232,7 @@ export function SalaryView({ activeSubtab }: { activeSubtab: string }) {
       ) : null}
 
       {activeSubtab === "Payslips" ? (
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1.2fr_0.8fr]">
           <PayrollTable rows={filteredEmployees} allowances={allowances} onPreview={setPayslipEmployeeId} />
           <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
             <div className="border-b border-gray-200 pb-5">

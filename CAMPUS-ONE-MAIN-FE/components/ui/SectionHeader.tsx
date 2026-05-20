@@ -28,7 +28,7 @@ export function SectionHeader({ title, description, action }: SectionHeaderProps
   }
 
   return (
-    <div className="flex items-start justify-between gap-6 pb-6 border-b border-gray-200 mb-2">
+    <div className="flex items-start justify-between gap-8 pb-8 border-b border-gray-200 mb-4">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-gray-900">
           {title}
