@@ -40,11 +40,11 @@ export function Sidebar({ className }: SidebarProps) {
           <div>
             <div className="flex items-center gap-1">
               <span className="text-[#F59E0B] font-bold text-xl">CAMPUS</span>
-              <span className="text-white font-light text-xl">Admin</span>
+              <span className="text-white font-light text-xl">One</span>
             </div>
           </div>
         </div>
-        <p className="text-xs text-gray-400 ml-12 -mt-1">Student Management</p>
+        <p className="text-xs text-gray-400 ml-12 -mt-1">Institution Management</p>
       </div>
 
       <div className="flex-1 overflow-y-auto py-6 px-4">

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Campus Portal",
-  description: "Student enrollment and academic portal",
+  title: "Campus One",
+  description: "University domain registration and institutional management platform",
 };
 
 export default function RootLayout({

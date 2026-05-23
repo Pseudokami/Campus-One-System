@@ -91,6 +91,13 @@ export function RegistrationWorkspace() {
 }
 
 function InstituteProfileForm({ school, setSchool, message, setMessage }: { school: SchoolProfile, setSchool: any, message: string, setMessage: any }) {
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('campus_one_logo');
+    if (saved) setLogoPreview(saved);
+  }, []);
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("Saving registration details...");
@@ -122,14 +129,27 @@ function InstituteProfileForm({ school, setSchool, message, setMessage }: { scho
     <form className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm" onSubmit={handleSubmit}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="md:col-span-2 flex items-center gap-6 p-6 rounded-2xl bg-gray-50 border border-gray-200">
-          <div className="w-24 h-24 rounded-2xl bg-primary/10 border-2 border-dashed border-primary/20 flex items-center justify-center">
-            <Building className="w-10 h-10 text-primary/40" />
+          <div className="w-24 h-24 rounded-2xl bg-primary/10 border-2 border-dashed border-primary/20 flex items-center justify-center overflow-hidden">
+            {logoPreview ? (
+              <img src={logoPreview} alt="Institute Logo" className="w-full h-full object-cover rounded-2xl" />
+            ) : (
+              <Building className="w-10 h-10 text-primary/40" />
+            )}
           </div>
           <div>
             <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2">Institute Logo</p>
             <button type="button" onClick={() => document.getElementById('institute-logo-upload')?.click()} className="bg-[#F59E0B] text-white px-4 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider hover:bg-[#D97706] transition-colors">Change Logo</button>
             <input type="file" id="institute-logo-upload" className="hidden" accept="image/*" onChange={(e) => {
-              if (e.target.files?.[0]) alert(`Logo ${e.target.files[0].name} selected! (Simulation)`);
+              const file = e.target.files?.[0];
+              if (file) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  const result = reader.result as string;
+                  setLogoPreview(result);
+                  localStorage.setItem('campus_one_logo', result);
+                };
+                reader.readAsDataURL(file);
+              }
             }} />
           </div>
         </div>

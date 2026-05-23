@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Users, BookOpen, AlertCircle, X, ChevronDown, Edit, Trash2, Eye, EyeOff, Save, Send, Printer, Search, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PrintTemplate, PrintTable, PrintThead, PrintTh, PrintTd, PrintInfoGrid, PrintSection } from "@/components/ui/PrintTemplate";
@@ -344,7 +344,20 @@ function SuccessToast({ message, onClose }: { message: string; onClose: () => vo
   );
 }
 
-function EditStudentForm({ student, onCancel }: { student: any; onCancel: () => void }) {
+function EditStudentForm({ student: studentProp, onCancel }: { student: any; onCancel: () => void }) {
+  // Merge passed prop with full record from localStorage (prop may only have id/name/level/status)
+  const student = useMemo(() => {
+    try {
+      const local = localStorage.getItem("campus_one_students");
+      if (local) {
+        const all = JSON.parse(local);
+        const full = all.find((s: any) => s.id === studentProp.id);
+        if (full) return { ...studentProp, ...full };
+      }
+    } catch {}
+    return studentProp;
+  }, [studentProp]);
+
   const [isSuccess, setIsSuccess] = useState(false);
   const [name, setName] = useState(student.name || "");
   const [level, setLevel] = useState(student.level || "Class 1");
@@ -793,7 +806,7 @@ function AdmissionForm() {
   // State variables for all student info fields
   const [studentName, setStudentName] = useState("");
   const [rollNo, setRollNo] = useState("");
-  const [level, setLevel] = useState("Class 1");
+  const [level, setLevel] = useState("");
   const [gender, setGender] = useState("");
   const [dob, setDob] = useState("");
   const [cnic, setCnic] = useState("");
@@ -941,7 +954,7 @@ function AdmissionForm() {
       discount,
       image,
       status: "Enrolled",
-      fee: "₱150.00",
+      fee: "â‚±150.00",
 
       // New properties
       identificationMark,
@@ -1099,7 +1112,7 @@ function AdmissionForm() {
                     onChange={(e) => setLevel(e.target.value)}
                     className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-500 focus:border-[#F59E0B] outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65rem_auto] bg-[right_1.25rem_center] bg-no-repeat pr-10"
                   >
-                    <option value="Class 1">Select Class</option>
+                    <option value="">Select Class</option>
                     <option value="Class 1">Class 1</option>
                     <option value="Class 2">Class 2</option>
                     <option value="Class 3">Class 3</option>
@@ -1448,7 +1461,7 @@ function AdmissionLetterView({ selectedStudent, onBack }: { selectedStudent?: an
                   className="w-full text-left px-6 py-3.5 text-xs hover:bg-[#F59E0B]/5 transition-colors flex flex-col gap-0.5"
                 >
                   <span className="font-bold text-gray-900">{stu.name}</span>
-                  <span className="text-gray-400 font-semibold font-mono text-[10px]">{stu.id} — {stu.level}</span>
+                  <span className="text-gray-400 font-semibold font-mono text-[10px]">{stu.id} â€” {stu.level}</span>
                 </button>
               ))}
             </div>
@@ -1483,11 +1496,11 @@ function AdmissionLetterView({ selectedStudent, onBack }: { selectedStudent?: an
                 </div>
                 <div className="flex justify-between py-2 border-b border-gray-200/50">
                   <span className="text-gray-500 font-semibold">Father's Name</span>
-                  <span className="font-bold text-gray-900">{studentLetter.fatherName || "—"}</span>
+                  <span className="font-bold text-gray-900">{studentLetter.fatherName || "â€”"}</span>
                 </div>
                 <div className="flex justify-between py-2">
                   <span className="text-gray-500 font-semibold">Father's Mobile</span>
-                  <span className="font-bold text-gray-900 font-mono">{studentLetter.fatherMobile || "—"}</span>
+                  <span className="font-bold text-gray-900 font-mono">{studentLetter.fatherMobile || "â€”"}</span>
                 </div>
               </div>
 
@@ -1531,10 +1544,10 @@ function AdmissionLetterView({ selectedStudent, onBack }: { selectedStudent?: an
               ]} />
             </PrintSection>
 
-            {/* Extra details — 3 columns */}
+            {/* Extra details â€” 3 columns */}
             <PrintSection title="Additional Details">
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "14px 24px" }}>
-                {/* Col 1 – Student extras */}
+                {/* Col 1 â€“ Student extras */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   {[
                     ["Any Identification Mark?", studentLetter.identificationMark],
@@ -1549,11 +1562,11 @@ function AdmissionLetterView({ selectedStudent, onBack }: { selectedStudent?: an
                   ].map(([label, val]) => (
                     <div key={label as string} style={{ display: "flex", flexDirection: "column" }}>
                       <span style={{ fontSize: "9px", fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</span>
-                      <span style={{ fontSize: "11px", fontWeight: 600, color: "#374151", marginTop: "2px" }}>↳ {val || "—"}</span>
+                      <span style={{ fontSize: "11px", fontWeight: 600, color: "#374151", marginTop: "2px" }}>â†³ {val || "â€”"}</span>
                     </div>
                   ))}
                 </div>
-                {/* Col 2 – Father */}
+                {/* Col 2 â€“ Father */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   {[
                     ["Father's Name",    studentLetter.fatherName],
@@ -1568,11 +1581,11 @@ function AdmissionLetterView({ selectedStudent, onBack }: { selectedStudent?: an
                   ].map(([label, val]) => (
                     <div key={label as string} style={{ display: "flex", flexDirection: "column" }}>
                       <span style={{ fontSize: "9px", fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</span>
-                      <span style={{ fontSize: "11px", fontWeight: 600, color: "#374151", marginTop: "2px" }}>↳ {val || "—"}</span>
+                      <span style={{ fontSize: "11px", fontWeight: 600, color: "#374151", marginTop: "2px" }}>â†³ {val || "â€”"}</span>
                     </div>
                   ))}
                 </div>
-                {/* Col 3 – Mother */}
+                {/* Col 3 â€“ Mother */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   {[
                     ["Mother's Name",    studentLetter.motherName],
@@ -1585,7 +1598,7 @@ function AdmissionLetterView({ selectedStudent, onBack }: { selectedStudent?: an
                   ].map(([label, val]) => (
                     <div key={label as string} style={{ display: "flex", flexDirection: "column" }}>
                       <span style={{ fontSize: "9px", fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</span>
-                      <span style={{ fontSize: "11px", fontWeight: 600, color: "#374151", marginTop: "2px" }}>↳ {val || "—"}</span>
+                      <span style={{ fontSize: "11px", fontWeight: 600, color: "#374151", marginTop: "2px" }}>â†³ {val || "â€”"}</span>
                     </div>
                   ))}
                 </div>
@@ -1710,7 +1723,7 @@ function StudentIDCardsView({ selectedStudent, onBack }: { selectedStudent?: any
                     className="w-full text-left px-4 py-3 text-xs hover:bg-primary/5 transition-colors flex flex-col gap-0.5"
                   >
                     <span className="font-bold text-gray-900">{stu.name}</span>
-                    <span className="text-gray-400 font-semibold font-mono text-[10px]">{stu.id} — {stu.level}</span>
+                    <span className="text-gray-400 font-semibold font-mono text-[10px]">{stu.id} â€” {stu.level}</span>
                   </button>
                 ))}
               </div>
@@ -1795,7 +1808,7 @@ function StudentIDCardsView({ selectedStudent, onBack }: { selectedStudent?: any
                 activeStyle === "Style 3" && "bg-rose-50 text-rose-600",
                 activeStyle === "Style 4" && "bg-gray-100 text-gray-600"
               )}>
-                🎓 Student
+                ðŸŽ“ Student
               </span>
 
               {/* Grid ledger items */}
@@ -1863,7 +1876,7 @@ function StudentIDCardsView({ selectedStudent, onBack }: { selectedStudent?: any
 
             <div className="flex-1 px-8 pt-4 pb-6 flex flex-col items-center text-center">
               <span className="text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-gray-100 text-gray-600">
-                🎓 Student
+                ðŸŽ“ Student
               </span>
 
               <div className="w-full mt-6 space-y-2 text-xs font-semibold text-gray-700 bg-gray-50/50 p-4 rounded-2xl border border-gray-150 shadow-inner">
@@ -1917,7 +1930,7 @@ function PrintBasicListView() {
         name: `Student ${String.fromCharCode(65 + (i % 26))} Name`,
         fatherName: `Father Name ${i + 1}`,
         level: i % 2 === 0 ? "Class 1" : "Class 2",
-        fee: "₱150.00",
+        fee: "â‚±150.00",
         fatherMobile: `+63 912 345 ${6000 + i}`
       }));
     }
@@ -1980,13 +1993,13 @@ function PrintBasicListView() {
   const paginatedStudents = filteredStudents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const formatFee = (fee: string | number) => {
-    if (!fee) return "₱150.00";
+    if (!fee) return "â‚±150.00";
     const str = String(fee).trim();
     if (str.startsWith("$")) {
-      return "₱" + str.substring(1);
+      return "â‚±" + str.substring(1);
     }
-    if (!str.startsWith("₱") && !str.includes("₱")) {
-      return "₱" + str;
+    if (!str.startsWith("â‚±") && !str.includes("â‚±")) {
+      return "â‚±" + str;
     }
     return str;
   };
@@ -2037,7 +2050,7 @@ function PrintBasicListView() {
           </div>
           <div className="bg-white p-6 flex flex-col items-center text-center gap-4">
             <div className="flex items-center gap-2 text-gray-900 font-bold">
-              <span className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-black">✓</span>
+              <span className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-black">âœ“</span>
               <span>Document Export</span>
             </div>
             <p className="text-sm text-gray-500 font-medium">{exportMessage}</p>
@@ -2350,7 +2363,7 @@ function AllClassesGrid() {
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-gray-500">Monthly Fees</span>
-                  <span className="font-semibold text-gray-900">₱{cls.monthlyTuitionFees}</span>
+                  <span className="font-semibold text-gray-900">â‚±{cls.monthlyTuitionFees}</span>
                 </div>
               </div>
               
@@ -2363,7 +2376,7 @@ function AllClassesGrid() {
                   className="p-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
                   title="Edit"
                 >
-                  <Edit3 className="w-5 h-5" />
+                  <Edit className="w-5 h-5" />
                 </button>
                 <button 
                   onClick={(e) => {
@@ -2799,7 +2812,7 @@ function ClassesWithSubjectsList() {
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-gray-500">Monthly Fees</span>
-                  <span className="font-semibold text-gray-900">₱{cls.monthlyTuitionFees}</span>
+                  <span className="font-semibold text-gray-900">â‚±{cls.monthlyTuitionFees}</span>
                 </div>
               </div>
               
@@ -2812,7 +2825,7 @@ function ClassesWithSubjectsList() {
                   className="p-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
                   title="Edit"
                 >
-                  <Edit3 className="w-5 h-5" />
+                  <Edit className="w-5 h-5" />
                 </button>
                 <button 
                   onClick={(e) => {
@@ -3575,7 +3588,7 @@ ${clonedTable.outerHTML}
       </div>
 
       {/* Print sheet */}
-      <PrintTemplate title="Student Login Credentials" subtitle="Confidential — Do Not Distribute">
+      <PrintTemplate title="Student Login Credentials" subtitle="Confidential â€” Do Not Distribute">
         <PrintTable>
           <PrintThead>
             <tr>
@@ -3898,7 +3911,7 @@ function NewEmployeeForm() {
                     Monthly Salary <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">₱</span>
+                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">â‚±</span>
                     <input required type="number" value={salary} onChange={(e) => setSalary(e.target.value)} placeholder="0.00" className="w-full h-12 rounded-xl border border-gray-200 bg-white pl-8 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#F59E0B] outline-none transition-all" onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, ''); }} />
                   </div>
                 </div>
@@ -4169,7 +4182,7 @@ function JobLetterView({ initialEmployee, onBack }: { initialEmployee?: any; onB
             { label: "Father / Husband Name", value: selectedEmployee.fatherName },
             { label: "National ID",           value: selectedEmployee.nationalId },
             { label: "Employee Role",         value: selectedEmployee.role },
-            { label: "Monthly Salary",        value: selectedEmployee.salary ? `₱${selectedEmployee.salary}` : "₱12,323" },
+            { label: "Monthly Salary",        value: selectedEmployee.salary ? `â‚±${selectedEmployee.salary}` : "â‚±12,323" },
             { label: "Mobile No",             value: selectedEmployee.mobile },
             { label: "Home Address",          value: selectedEmployee.address },
             { label: "Date of Birth",         value: selectedEmployee.dob },
@@ -4214,7 +4227,7 @@ function JobLetterView({ initialEmployee, onBack }: { initialEmployee?: any; onB
             {/* Nav controls */}
             <div className="flex items-center justify-between">
               <button onClick={() => { setSelectedEmployee(null); if (onBack) onBack(); }} className="px-4 py-2 border border-gray-200 hover:bg-gray-50 rounded-xl text-xs font-bold text-gray-900 transition-all flex items-center gap-2">
-                ← Back to Employee List
+                â† Back to Employee List
               </button>
             </div>
 
@@ -4243,7 +4256,7 @@ function JobLetterView({ initialEmployee, onBack }: { initialEmployee?: any; onB
                 </div>
                 <div className="space-y-1">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Account Status</span>
-                  <p className="font-black text-green-600 text-sm flex items-center gap-1 mt-0.5">✔ Active</p>
+                  <p className="font-black text-green-600 text-sm flex items-center gap-1 mt-0.5">âœ” Active</p>
                 </div>
               </div>
 
@@ -4647,7 +4660,7 @@ ${clonedTable.outerHTML}
       </div>
 
       {/* Print-Only credentials list */}
-      <PrintTemplate title="Staff Credentials Ledger" subtitle="Confidential — Do Not Distribute">
+      <PrintTemplate title="Staff Credentials Ledger" subtitle="Confidential â€” Do Not Distribute">
         <PrintTable>
           <PrintThead>
             <tr>
@@ -4695,7 +4708,7 @@ function GenerateFeesInvoiceView() {
     e.preventDefault();
     setError(""); setGeneratedCount(null);
     if (!className.trim() || !month) { setError("Please fill in all required fields."); return; }
-    if (!hasBankAccount) { setError("Please configure your bank account info under General Settings → Accounts For Fees Invoice first."); return; }
+    if (!hasBankAccount) { setError("Please configure your bank account info under General Settings â†’ Accounts For Fees Invoice first."); return; }
     setGenerating(true);
     try {
       const res = await fetch(`/api/students?search=${encodeURIComponent(className.trim())}`);
@@ -4733,7 +4746,7 @@ function GenerateFeesInvoiceView() {
             </div>
           </div>
           {error && <p className="text-sm text-red-500 font-medium text-center">{error}</p>}
-          {generatedCount !== null && <p className="text-sm text-green-600 font-bold text-center">{generatedCount === 0 ? "No students found in that class." : `✓ Generated ${generatedCount} invoice(s) for ${className}`}</p>}
+          {generatedCount !== null && <p className="text-sm text-green-600 font-bold text-center">{generatedCount === 0 ? "No students found in that class." : `âœ“ Generated ${generatedCount} invoice(s) for ${className}`}</p>}
           <div className="flex justify-center">
             <button type="submit" disabled={!hasBankAccount || generating} className="bg-primary text-white font-black px-12 py-4 rounded-full hover:scale-[1.02] transition-all shadow-lg shadow-primary/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100">
               {generating ? "Generating..." : "Generate Now"}
@@ -4801,9 +4814,9 @@ function CollectFeesView() {
               <tbody className="divide-y divide-gray-100">
                 {results.map((student, i) => (
                   <tr key={student.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}>
-                    <td className="px-6 py-4 font-medium text-gray-900">{student.name ?? "—"}</td>
+                    <td className="px-6 py-4 font-medium text-gray-900">{student.name ?? "â€”"}</td>
                     <td className="px-6 py-4 text-gray-500">{student.studentId ?? student.id}</td>
-                    <td className="px-6 py-4 text-gray-500">{student.class ?? "—"}</td>
+                    <td className="px-6 py-4 text-gray-500">{student.class ?? "â€”"}</td>
                     <td className="px-6 py-4"><button onClick={() => { setCollectingStudent(student); setFeeAmount(""); setFeeMonth(""); setFeeMethod("Cash"); setFeeNotes(""); setFeeError(""); setFeeSuccess(false); }} className="px-4 py-1.5 bg-primary text-white text-xs font-bold rounded-full hover:bg-primary/90 transition-colors">Collect Fee</button></td>
                   </tr>
                 ))}
@@ -4816,7 +4829,7 @@ function CollectFeesView() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 space-y-6">
             <div className="flex items-start justify-between">
-              <div><h3 className="text-lg font-black text-gray-900">Collect Fee</h3><p className="text-sm text-gray-500 mt-0.5">{collectingStudent.name ?? "—"} · {collectingStudent.class ?? "—"}</p></div>
+              <div><h3 className="text-lg font-black text-gray-900">Collect Fee</h3><p className="text-sm text-gray-500 mt-0.5">{collectingStudent.name ?? "â€”"} Â· {collectingStudent.class ?? "â€”"}</p></div>
               <button onClick={() => setCollectingStudent(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             {feeSuccess ? (
@@ -4861,11 +4874,11 @@ function FeesPaidSlipView() {
         {!loading && results && results.length > 0 && !selected && (
           <div className="rounded-xl border border-gray-100 overflow-hidden">
             <table className="w-full text-[13px] text-left"><thead><tr className="bg-primary text-white"><th className="px-5 py-3 text-xs font-bold uppercase tracking-wider">Name</th><th className="px-5 py-3 text-xs font-bold uppercase tracking-wider">ID</th><th className="px-5 py-3 text-xs font-bold uppercase tracking-wider">Class</th><th className="px-5 py-3 text-xs font-bold uppercase tracking-wider">Select</th></tr></thead>
-              <tbody className="divide-y divide-gray-100">{results.map((s, i) => (<tr key={s.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}><td className="px-5 py-3 font-semibold text-gray-900">{s.name ?? "—"}</td><td className="px-5 py-3 text-gray-500">{s.studentId ?? s.id}</td><td className="px-5 py-3 text-gray-500">{s.class ?? "—"}</td><td className="px-5 py-3"><button onClick={() => { setSelected(s); setSlip(false); }} className="px-3 py-1.5 text-[11px] font-bold text-primary border border-primary/30 rounded-lg hover:bg-primary/10">Select</button></td></tr>))}</tbody>
+              <tbody className="divide-y divide-gray-100">{results.map((s, i) => (<tr key={s.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}><td className="px-5 py-3 font-semibold text-gray-900">{s.name ?? "â€”"}</td><td className="px-5 py-3 text-gray-500">{s.studentId ?? s.id}</td><td className="px-5 py-3 text-gray-500">{s.class ?? "â€”"}</td><td className="px-5 py-3"><button onClick={() => { setSelected(s); setSlip(false); }} className="px-3 py-1.5 text-[11px] font-bold text-primary border border-primary/30 rounded-lg hover:bg-primary/10">Select</button></td></tr>))}</tbody>
             </table>
           </div>
         )}
-        {selected && (<div className="rounded-xl border border-primary/20 bg-primary/5 px-6 py-4 flex items-center justify-between"><div><p className="text-[10px] font-bold text-primary uppercase tracking-widest">Selected Student</p><p className="mt-1 font-bold text-gray-900">{selected.name ?? "—"}</p><p className="text-xs text-gray-500">{selected.class ?? "—"}</p></div><button onClick={() => { setSelected(null); setSlip(false); setResults(null); setSearched(false); setQuery(""); }} className="text-xs text-gray-400 hover:text-gray-600 font-bold">Change</button></div>)}
+        {selected && (<div className="rounded-xl border border-primary/20 bg-primary/5 px-6 py-4 flex items-center justify-between"><div><p className="text-[10px] font-bold text-primary uppercase tracking-widest">Selected Student</p><p className="mt-1 font-bold text-gray-900">{selected.name ?? "â€”"}</p><p className="text-xs text-gray-500">{selected.class ?? "â€”"}</p></div><button onClick={() => { setSelected(null); setSlip(false); setResults(null); setSearched(false); setQuery(""); }} className="text-xs text-gray-400 hover:text-gray-600 font-bold">Change</button></div>)}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative w-full max-w-xs"><span className="absolute -top-2 left-3 z-10 bg-white px-1 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Fees Month <span className="text-red-500">*</span></span><input type="month" value={month} onChange={e => { setMonth(e.target.value); setSlip(false); }} className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 pt-2 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" /></div>
           {formError && <p className="text-sm text-red-500 font-medium">{formError}</p>}
@@ -4877,9 +4890,9 @@ function FeesPaidSlipView() {
           <div className="bg-primary px-8 py-6 text-white text-center"><h2 className="text-xl font-black uppercase tracking-widest">{schoolName}</h2><p className="text-white/70 text-sm font-medium mt-1">Official Fees Paid Slip</p></div>
           <div className="p-8 space-y-6">
             <div className="grid grid-cols-2 gap-6 text-sm">
-              <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Student Name</p><p className="mt-1 font-bold text-gray-900">{selected.name ?? "—"}</p></div>
+              <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Student Name</p><p className="mt-1 font-bold text-gray-900">{selected.name ?? "â€”"}</p></div>
               <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Student ID</p><p className="mt-1 font-bold text-gray-900">{selected.studentId ?? selected.id}</p></div>
-              <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Class</p><p className="mt-1 font-bold text-gray-900">{selected.class ?? "—"}</p></div>
+              <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Class</p><p className="mt-1 font-bold text-gray-900">{selected.class ?? "â€”"}</p></div>
               <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Fees Month</p><p className="mt-1 font-bold text-gray-900">{monthLabel}</p></div>
               <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Payment Status</p><span className="mt-1 inline-block px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">PAID</span></div>
               <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Date Generated</p><p className="mt-1 font-bold text-gray-900">{new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p></div>
@@ -4970,10 +4983,10 @@ function StudentsAttendanceView() {
         <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
           {rows.length === 0 ? <p className="px-8 py-12 text-center text-gray-400 italic text-sm">No students found in &ldquo;{classInput}&rdquo;.</p> : (
             <div className="p-6 space-y-4">
-              <div className="flex items-center justify-between"><p className="text-sm font-bold text-gray-700">{rows.length} student{rows.length !== 1 ? "s" : ""} — {new Date(date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>{saveSuccess && <span className="text-xs font-bold text-green-600">✓ Attendance saved!</span>}</div>
+              <div className="flex items-center justify-between"><p className="text-sm font-bold text-gray-700">{rows.length} student{rows.length !== 1 ? "s" : ""} â€” {new Date(date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>{saveSuccess && <span className="text-xs font-bold text-green-600">âœ“ Attendance saved!</span>}</div>
               <div className="overflow-x-auto rounded-xl border border-gray-100">
                 <table className="w-full text-left text-[13px]"><thead><tr className="bg-primary text-white"><th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider">#</th><th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider">Name</th><th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider">ID</th><th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider">Status</th></tr></thead>
-                  <tbody>{rows.map((row, i) => (<tr key={row.person.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}><td className="px-5 py-3 text-gray-400">{i + 1}</td><td className="px-5 py-3 font-semibold text-gray-900">{row.person.name ?? "—"}</td><td className="px-5 py-3 text-gray-500">{row.person.studentId ?? row.person.id}</td><td className="px-5 py-3"><select value={row.status} onChange={e => setRows(rows.map((r, j) => j === i ? { ...r, status: e.target.value } : r))} className={cn("rounded-lg border px-3 py-1.5 text-xs font-bold outline-none transition", row.status === "present" ? "bg-green-50 border-green-200 text-green-700" : row.status === "absent" ? "bg-red-50 border-red-200 text-red-700" : "bg-amber-50 border-amber-200 text-amber-700")}><option value="present">Present</option><option value="absent">Absent</option><option value="late">Late</option></select></td></tr>))}</tbody>
+                  <tbody>{rows.map((row, i) => (<tr key={row.person.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}><td className="px-5 py-3 text-gray-400">{i + 1}</td><td className="px-5 py-3 font-semibold text-gray-900">{row.person.name ?? "â€”"}</td><td className="px-5 py-3 text-gray-500">{row.person.studentId ?? row.person.id}</td><td className="px-5 py-3"><select value={row.status} onChange={e => setRows(rows.map((r, j) => j === i ? { ...r, status: e.target.value } : r))} className={cn("rounded-lg border px-3 py-1.5 text-xs font-bold outline-none transition", row.status === "present" ? "bg-green-50 border-green-200 text-green-700" : row.status === "absent" ? "bg-red-50 border-red-200 text-red-700" : "bg-amber-50 border-amber-200 text-amber-700")}><option value="present">Present</option><option value="absent">Absent</option><option value="late">Late</option></select></td></tr>))}</tbody>
                 </table>
               </div>
               <div className="flex justify-end"><button onClick={handleSave} disabled={saving} className="bg-primary text-white font-black px-10 py-3 rounded-full hover:scale-[1.02] transition-all shadow-lg shadow-primary/20 disabled:opacity-60">{saving ? "Saving..." : "Save Attendance"}</button></div>
@@ -5006,10 +5019,10 @@ function EmployeesAttendanceView() {
         <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
           {rows.length === 0 ? <p className="px-8 py-12 text-center text-gray-400 italic text-sm">No employees found.</p> : (
             <div className="p-6 space-y-4">
-              <div className="flex items-center justify-between"><p className="text-sm font-bold text-gray-700">{rows.length} employee{rows.length !== 1 ? "s" : ""} — {new Date(date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>{saveSuccess && <span className="text-xs font-bold text-green-600">✓ Attendance saved!</span>}</div>
+              <div className="flex items-center justify-between"><p className="text-sm font-bold text-gray-700">{rows.length} employee{rows.length !== 1 ? "s" : ""} â€” {new Date(date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>{saveSuccess && <span className="text-xs font-bold text-green-600">âœ“ Attendance saved!</span>}</div>
               <div className="overflow-x-auto rounded-xl border border-gray-100">
                 <table className="w-full text-left text-[13px]"><thead><tr className="bg-primary text-white"><th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider">#</th><th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider">Name</th><th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider">Role</th><th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider">Status</th></tr></thead>
-                  <tbody>{rows.map((row, i) => (<tr key={row.person.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}><td className="px-5 py-3 text-gray-400">{i + 1}</td><td className="px-5 py-3 font-semibold text-gray-900">{row.person.name ?? "—"}</td><td className="px-5 py-3 text-gray-500">{row.person.role ?? "—"}</td><td className="px-5 py-3"><select value={row.status} onChange={e => setRows(rows.map((r, j) => j === i ? { ...r, status: e.target.value } : r))} className={cn("rounded-lg border px-3 py-1.5 text-xs font-bold outline-none transition", row.status === "present" ? "bg-green-50 border-green-200 text-green-700" : row.status === "absent" ? "bg-red-50 border-red-200 text-red-700" : "bg-amber-50 border-amber-200 text-amber-700")}><option value="present">Present</option><option value="absent">Absent</option><option value="late">Late</option></select></td></tr>))}</tbody>
+                  <tbody>{rows.map((row, i) => (<tr key={row.person.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}><td className="px-5 py-3 text-gray-400">{i + 1}</td><td className="px-5 py-3 font-semibold text-gray-900">{row.person.name ?? "â€”"}</td><td className="px-5 py-3 text-gray-500">{row.person.role ?? "â€”"}</td><td className="px-5 py-3"><select value={row.status} onChange={e => setRows(rows.map((r, j) => j === i ? { ...r, status: e.target.value } : r))} className={cn("rounded-lg border px-3 py-1.5 text-xs font-bold outline-none transition", row.status === "present" ? "bg-green-50 border-green-200 text-green-700" : row.status === "absent" ? "bg-red-50 border-red-200 text-red-700" : "bg-amber-50 border-amber-200 text-amber-700")}><option value="present">Present</option><option value="absent">Absent</option><option value="late">Late</option></select></td></tr>))}</tbody>
                 </table>
               </div>
               <div className="flex justify-end"><button onClick={handleSave} disabled={saving} className="bg-primary text-white font-black px-10 py-3 rounded-full hover:scale-[1.02] transition-all shadow-lg shadow-primary/20 disabled:opacity-60">{saving ? "Saving..." : "Save Attendance"}</button></div>
@@ -5040,7 +5053,7 @@ function ClassWiseReportView() {
         <div key={className} className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
           <div className="px-6 py-4 bg-primary/5 border-b border-primary/10 flex items-center justify-between"><h4 className="font-black text-gray-900">{className}</h4><div className="flex gap-3 text-xs font-bold"><span className="text-green-600">{rows.filter(r => r.status === "present").length} Present</span><span className="text-red-500">{rows.filter(r => r.status === "absent").length} Absent</span><span className="text-amber-500">{rows.filter(r => r.status === "late").length} Late</span></div></div>
           <table className="w-full text-left text-[13px]"><thead><tr className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider border-b border-gray-100"><th className="px-5 py-3">#</th><th className="px-5 py-3">Name</th><th className="px-5 py-3">Status</th></tr></thead>
-            <tbody className="divide-y divide-gray-100">{rows.map((r, i) => (<tr key={r.id ?? i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}><td className="px-5 py-3 text-gray-400">{i + 1}</td><td className="px-5 py-3 font-semibold text-gray-900">{r.personName ?? "—"}</td><td className="px-5 py-3"><span className={cn("px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide", r.status === "present" ? "bg-green-100 text-green-700" : r.status === "absent" ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600")}>{r.status ?? "—"}</span></td></tr>))}</tbody>
+            <tbody className="divide-y divide-gray-100">{rows.map((r, i) => (<tr key={r.id ?? i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}><td className="px-5 py-3 text-gray-400">{i + 1}</td><td className="px-5 py-3 font-semibold text-gray-900">{r.personName ?? "â€”"}</td><td className="px-5 py-3"><span className={cn("px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide", r.status === "present" ? "bg-green-100 text-green-700" : r.status === "absent" ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600")}>{r.status ?? "â€”"}</span></td></tr>))}</tbody>
           </table>
         </div>
       ))}
@@ -5051,30 +5064,86 @@ function ClassWiseReportView() {
 function StudentsAttendanceReportView() {
   const now = new Date();
   const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const dateRangeLabel = `${firstOfMonth.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} - ${now.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`;
+  const [startDate, setStartDate] = useState(firstOfMonth.toISOString().split("T")[0]);
+  const [endDate, setEndDate] = useState(now.toISOString().split("T")[0]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const records = useMemo(() => {
+    try {
+      const local = localStorage.getItem("campus_one_student_attendance");
+      if (local) return JSON.parse(local) as any[];
+    } catch {}
+    return [] as any[];
+  }, []);
+
+  const filteredRecords = useMemo(() => {
+    return records.filter((r: any) => {
+      const d = r.date || "";
+      const inRange = d >= startDate && d <= endDate;
+      const matchesSearch = !searchQuery ||
+        (r.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (r.id || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (r.className || "").toLowerCase().includes(searchQuery.toLowerCase());
+      return inRange && matchesSearch;
+    });
+  }, [records, startDate, endDate, searchQuery]);
+
+  const dateRangeLabel = `${new Date(startDate + "T00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} - ${new Date(endDate + "T00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`;
+
+  const exportData = (type: string) => {
+    if (type === "Copy") {
+      const text = filteredRecords.map((r: any) => `${r.date}\t${r.day}\t${r.id}\t${r.name}\t${r.className}\t${r.status}`).join("\n");
+      navigator.clipboard.writeText(text || "No data to copy");
+      alert("Copied to clipboard!");
+    } else if (type === "CSV") {
+      const header = "Date,Day,ID,Name,Class,Status\n";
+      const rows = filteredRecords.map((r: any) => `${r.date},${r.day},${r.id},"${r.name}",${r.className},${r.status}`).join("\n");
+      const blob = new Blob([header + rows], { type: "text/csv" });
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "students_attendance_report.csv"; a.click();
+    } else {
+      alert(`${type} export is available in the production build.`);
+    }
+  };
 
   return (
     <div>
       <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm no-print">
         <div className="p-8 space-y-8">
-          <div className="flex items-center gap-4">
-            <button className="bg-primary text-white px-6 py-2.5 rounded-lg text-xs font-black flex items-center gap-2">
+          <div className="flex items-center gap-4 relative">
+            <button
+              onClick={() => setShowDatePicker(!showDatePicker)}
+              className="bg-primary text-white px-6 py-2.5 rounded-lg text-xs font-black flex items-center gap-2 hover:bg-[#D97706] transition-colors"
+            >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
               {dateRangeLabel}
               <ChevronDown className="w-4 h-4" />
             </button>
+            {showDatePicker && (
+              <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl p-4 z-50 flex items-center gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-500 uppercase">From</label>
+                  <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 focus:border-[#F59E0B] outline-none" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-500 uppercase">To</label>
+                  <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 focus:border-[#F59E0B] outline-none" />
+                </div>
+                <button onClick={() => setShowDatePicker(false)} className="mt-4 px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-[#D97706] transition-colors">Apply</button>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap gap-2">
               {["Copy", "CSV", "Excel", "PDF"].map(tool => (
-                <button key={tool} className="px-4 py-2 bg-white/5 border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:bg-white/10 transition-all">{tool}</button>
+                <button key={tool} onClick={() => exportData(tool)} className="px-4 py-2 bg-white/5 border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:bg-gray-100 transition-all">{tool}</button>
               ))}
-              <button onClick={() => window.print()} className="px-4 py-2 bg-white/5 border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:bg-white/10 transition-all">Print</button>
+              <button onClick={() => window.print()} className="px-4 py-2 bg-white/5 border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:bg-gray-100 transition-all">Print</button>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500 font-medium">Search:</span>
-              <input type="text" className="h-10 rounded-lg border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Name, ID, or class..." className="h-10 rounded-lg border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
             </div>
           </div>
 
@@ -5091,11 +5160,26 @@ function StudentsAttendanceReportView() {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td colSpan={6} className="px-6 py-20 text-center text-gray-500/40 font-bold uppercase tracking-widest text-[11px] bg-gray-50/30">
-                    No data available in table
-                  </td>
-                </tr>
+                {filteredRecords.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-20 text-center text-gray-500/40 font-bold uppercase tracking-widest text-[11px] bg-gray-50/30">
+                      No data available in table
+                    </td>
+                  </tr>
+                ) : (
+                  filteredRecords.map((r: any, i: number) => (
+                    <tr key={i} className="border-t border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-3 text-gray-600">{r.date}</td>
+                      <td className="px-6 py-3 text-gray-600">{r.day}</td>
+                      <td className="px-6 py-3 font-mono text-gray-500">{r.id}</td>
+                      <td className="px-6 py-3 font-semibold text-gray-900">{r.name}</td>
+                      <td className="px-6 py-3 text-gray-600">{r.className}</td>
+                      <td className="px-6 py-3">
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${r.status === "Present" ? "bg-green-50 text-green-600" : r.status === "Late" ? "bg-amber-50 text-amber-600" : "bg-red-50 text-red-600"}`}>{r.status}</span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -5115,9 +5199,22 @@ function StudentsAttendanceReportView() {
             </tr>
           </PrintThead>
           <tbody>
-            <tr>
-              <td colSpan={6} style={{ padding: "24px", textAlign: "center", color: "#9CA3AF", fontSize: "11px" }}>No data available</td>
-            </tr>
+            {filteredRecords.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ padding: "24px", textAlign: "center", color: "#9CA3AF", fontSize: "11px" }}>No data available</td>
+              </tr>
+            ) : (
+              filteredRecords.map((r: any, i: number) => (
+                <tr key={i}>
+                  <PrintTd>{r.date}</PrintTd>
+                  <PrintTd>{r.day}</PrintTd>
+                  <PrintTd>{r.id}</PrintTd>
+                  <PrintTd>{r.name}</PrintTd>
+                  <PrintTd>{r.className}</PrintTd>
+                  <PrintTd>{r.status}</PrintTd>
+                </tr>
+              ))
+            )}
           </tbody>
         </PrintTable>
       </PrintTemplate>
@@ -5128,30 +5225,86 @@ function StudentsAttendanceReportView() {
 function EmployeesAttendanceReportView() {
   const now = new Date();
   const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const dateRangeLabel = `${firstOfMonth.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} - ${now.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`;
+  const [startDate, setStartDate] = useState(firstOfMonth.toISOString().split("T")[0]);
+  const [endDate, setEndDate] = useState(now.toISOString().split("T")[0]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const records = useMemo(() => {
+    try {
+      const local = localStorage.getItem("campus_one_employee_attendance");
+      if (local) return JSON.parse(local) as any[];
+    } catch {}
+    return [] as any[];
+  }, []);
+
+  const filteredRecords = useMemo(() => {
+    return records.filter((r: any) => {
+      const d = r.date || "";
+      const inRange = d >= startDate && d <= endDate;
+      const matchesSearch = !searchQuery ||
+        (r.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (r.id || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (r.type || "").toLowerCase().includes(searchQuery.toLowerCase());
+      return inRange && matchesSearch;
+    });
+  }, [records, startDate, endDate, searchQuery]);
+
+  const dateRangeLabel = `${new Date(startDate + "T00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} - ${new Date(endDate + "T00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`;
+
+  const exportData = (type: string) => {
+    if (type === "Copy") {
+      const text = filteredRecords.map((r: any) => `${r.date}\t${r.day}\t${r.id}\t${r.name}\t${r.type}\t${r.status}\t${r.time || ""}`).join("\n");
+      navigator.clipboard.writeText(text || "No data to copy");
+      alert("Copied to clipboard!");
+    } else if (type === "CSV") {
+      const header = "Date,Day,ID,Name,Type,Status,Time\n";
+      const rows = filteredRecords.map((r: any) => `${r.date},${r.day},${r.id},"${r.name}",${r.type},${r.status},${r.time || ""}`).join("\n");
+      const blob = new Blob([header + rows], { type: "text/csv" });
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "employees_attendance_report.csv"; a.click();
+    } else {
+      alert(`${type} export is available in the production build.`);
+    }
+  };
 
   return (
     <div>
       <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm no-print">
         <div className="p-8 space-y-8">
-          <div className="flex items-center gap-4">
-            <button className="bg-primary text-white px-6 py-2.5 rounded-lg text-xs font-black flex items-center gap-2">
+          <div className="flex items-center gap-4 relative">
+            <button
+              onClick={() => setShowDatePicker(!showDatePicker)}
+              className="bg-primary text-white px-6 py-2.5 rounded-lg text-xs font-black flex items-center gap-2 hover:bg-[#D97706] transition-colors"
+            >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
               {dateRangeLabel}
               <ChevronDown className="w-4 h-4" />
             </button>
+            {showDatePicker && (
+              <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl p-4 z-50 flex items-center gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-500 uppercase">From</label>
+                  <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 focus:border-[#F59E0B] outline-none" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-500 uppercase">To</label>
+                  <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 focus:border-[#F59E0B] outline-none" />
+                </div>
+                <button onClick={() => setShowDatePicker(false)} className="mt-4 px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-[#D97706] transition-colors">Apply</button>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap gap-2">
               {["Copy", "CSV", "Excel", "PDF"].map(tool => (
-                <button key={tool} className="px-4 py-2 bg-white/5 border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:bg-white/10 transition-all">{tool}</button>
+                <button key={tool} onClick={() => exportData(tool)} className="px-4 py-2 bg-white/5 border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:bg-gray-100 transition-all">{tool}</button>
               ))}
-              <button onClick={() => window.print()} className="px-4 py-2 bg-white/5 border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:bg-white/10 transition-all">Print</button>
+              <button onClick={() => window.print()} className="px-4 py-2 bg-white/5 border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:bg-gray-100 transition-all">Print</button>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500 font-medium">Search:</span>
-              <input type="text" className="h-10 rounded-lg border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
+              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Name, ID, or type..." className="h-10 rounded-lg border border-gray-200 bg-white px-4 text-sm text-gray-900 focus:border-[#F59E0B] outline-none transition-all" />
             </div>
           </div>
 
@@ -5169,11 +5322,27 @@ function EmployeesAttendanceReportView() {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td colSpan={7} className="px-6 py-20 text-center text-gray-500/40 font-bold uppercase tracking-widest text-[11px] bg-gray-50/30">
-                    No data available in table
-                  </td>
-                </tr>
+                {filteredRecords.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-20 text-center text-gray-500/40 font-bold uppercase tracking-widest text-[11px] bg-gray-50/30">
+                      No data available in table
+                    </td>
+                  </tr>
+                ) : (
+                  filteredRecords.map((r: any, i: number) => (
+                    <tr key={i} className="border-t border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-3 text-gray-600">{r.date}</td>
+                      <td className="px-6 py-3 text-gray-600">{r.day}</td>
+                      <td className="px-6 py-3 font-mono text-gray-500">{r.id}</td>
+                      <td className="px-6 py-3 font-semibold text-gray-900">{r.name}</td>
+                      <td className="px-6 py-3 text-gray-600">{r.type}</td>
+                      <td className="px-6 py-3">
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${r.status === "Present" ? "bg-green-50 text-green-600" : r.status === "Late" ? "bg-amber-50 text-amber-600" : "bg-red-50 text-red-600"}`}>{r.status}</span>
+                      </td>
+                      <td className="px-6 py-3 font-mono text-gray-500">{r.time || "â€”"}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -5194,26 +5363,26 @@ function EmployeesAttendanceReportView() {
             </tr>
           </PrintThead>
           <tbody>
-            <tr>
-              <td colSpan={7} style={{ padding: "24px", textAlign: "center", color: "#9CA3AF", fontSize: "11px" }}>No data available</td>
-            </tr>
+            {filteredRecords.length === 0 ? (
+              <tr>
+                <td colSpan={7} style={{ padding: "24px", textAlign: "center", color: "#9CA3AF", fontSize: "11px" }}>No data available</td>
+              </tr>
+            ) : (
+              filteredRecords.map((r: any, i: number) => (
+                <tr key={i}>
+                  <PrintTd>{r.date}</PrintTd>
+                  <PrintTd>{r.day}</PrintTd>
+                  <PrintTd>{r.id}</PrintTd>
+                  <PrintTd>{r.name}</PrintTd>
+                  <PrintTd>{r.type}</PrintTd>
+                  <PrintTd>{r.status}</PrintTd>
+                  <PrintTd>{r.time || "—"}</PrintTd>
+                </tr>
+              ))
+            )}
           </tbody>
         </PrintTable>
       </PrintTemplate>
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

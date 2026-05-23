@@ -41,7 +41,7 @@ export function LandingPage() {
         return;
       }
       setConfirmPasswordError('');
-      // Signup via local API (JSON-file store)
+      // Signup via backend, then auto-login to set session cookies
       setLoading(true);
       try {
         const res = await fetch('/api/auth/signup', {
@@ -51,7 +51,16 @@ export function LandingPage() {
         });
         const data = await res.json();
         if (!res.ok) { setError(data.message ?? 'Sign up failed.'); return; }
-        router.push('/dashboard');
+
+        // Auto-login after successful signup so cookies are set
+        const loginResult = await loginWithSupabase(email, password);
+        if (loginResult.success && loginResult.user) {
+          router.push(getRedirectPath(loginResult.user.role));
+          return;
+        }
+        // Fallback: signup worked but auto-login failed
+        setError('Account created! Please log in.');
+        setActiveModal('login');
       } catch {
         setError('Network error. Please try again.');
       } finally {
@@ -83,7 +92,7 @@ export function LandingPage() {
           <GraduationCap className="w-8 h-8 text-[#F59E0B]" />
           <div className="flex items-center gap-1">
             <span className="text-[#F59E0B] font-bold text-xl tracking-tight">CAMPUS</span>
-            <span className="text-white font-light text-xl tracking-tight">Portal</span>
+            <span className="text-white font-light text-xl tracking-tight">One</span>
           </div>
         </div>
       </header>
@@ -92,8 +101,8 @@ export function LandingPage() {
       <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-lg">
           <div className="text-center mb-10">
-            <h1 className="text-4xl font-bold text-white mb-3">Welcome</h1>
-            <p className="text-lg text-gray-300">Your gateway to education</p>
+            <h1 className="text-4xl font-bold text-white mb-3">Welcome to Campus One</h1>
+            <p className="text-lg text-gray-300">Register and manage your institution</p>
           </div>
 
           {/* Sign Up */}
@@ -143,7 +152,7 @@ export function LandingPage() {
       </div>
 
       <div className="px-6 pb-6 text-center">
-        <p className="text-xs text-gray-400">Need help? Contact admissions office</p>
+        <p className="text-xs text-gray-400">Need help? Contact support@campusone.com</p>
       </div>
 
       {/* Modal overlay */}

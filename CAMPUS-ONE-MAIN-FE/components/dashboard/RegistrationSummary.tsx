@@ -27,7 +27,7 @@ export function RegistrationSummary({ school }: RegistrationSummaryProps) {
           { label: "Target subdomain", value: school.targetSubdomain || "Not set" },
           { label: "School type", value: school.schoolType || "Not set" },
           { label: "Contact", value: school.contactNumber || "Not set" },
-          { label: "Setup progress", value: `${school.setupProgress}%` },
+          { label: "Setup progress", value: `${school.setupProgress ?? 0}%` },
         ].map((item) => (
           <div key={item.label} className="rounded-xl bg-gray-50 border border-gray-200 p-5">
             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">{item.label}</p>

@@ -38,3 +38,73 @@ body {
 .bg-primary\/10 { background-color: rgba(245, 166, 35, 0.1); }
 .bg-primary\/5 { background-color: rgba(245, 166, 35, 0.05); }
 .border-primary\/20 { border-color: rgba(245, 166, 35, 0.2); }
+
+/* Hide browser native password reveal button (Edge/Chrome) */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+input::-webkit-credentials-auto-fill-button {
+  display: none !important;
+}
+
+/* ─── Print Styles ─────────────────────────────────────────────────────────── */
+@media print {
+  /* Hide everything by default */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Hide sidebar, header, nav, and anything marked no-print */
+  .no-print,
+  nav,
+  aside,
+  header,
+  [data-sidebar] {
+    display: none !important;
+  }
+
+  /* Show only the printable content - DO NOT override display (breaks flex/grid) */
+  .print-only-container,
+  .print-only-container * {
+    visibility: visible !important;
+  }
+
+  .print-only-container {
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    background: white !important;
+    margin: 0 !important;
+    padding: 20px !important;
+    z-index: 99999 !important;
+  }
+
+  /* Reset page layout for clean printing */
+  body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Preserve colors in print */
+  .print-only-container * {
+    color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Page settings */
+  @page {
+    margin: 0.5in;
+    size: auto;
+  }
+}
+
+/* Ensure print-only content is hidden on screen */
+.print-only-container {
+  display: none;
+}
+
